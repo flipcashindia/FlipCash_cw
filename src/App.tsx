@@ -1,102 +1,165 @@
-import { useState } from 'react';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 
-function App() {
-  const [balance, setBalance] = useState(1000);
-  const [amount, setAmount] = useState('');
+// Context Providers
+import { AuthProvider } from './context/AuthContext';
+import { SellFlowProvider } from './context/SellFlowContext';
 
-  const handleDeposit = () => {
-    const value = parseFloat(amount);
-    if (value && value > 0) {
-      setBalance(balance + value);
-      setAmount('');
+// Layout
+import HeaderRibbon from './components/layout/HeaderRibbon';
+import MainNavbar from './components/layout/MainNavbar';
+import Footer from './components/layout/Footer';
+
+// Home
+import HeroBanner from './components/home/HeroBanner';
+import CustomerReviews from './components/home/CustomerReviews';
+import TopBrands from './components/home/TopBrands';
+import BlogSlider from './components/home/BlogSlider';
+import BlogSection from './components/home/BlogSection';
+// import BlogDetailPage from './components/home/BlogDetailPage';
+import FAQSection from './components/home/FAQSection';
+import DownloadAppBanner from './components/home/DownloadAppBanner';
+import AboutSection from './components/home/AboutSection';
+import CategorySlider from './components/home/CategorySlider';
+import SellOldDevice from './components/home/SellOldDevice';
+
+// Sell Flow
+import SellProductSection from './components/sell-flow/SellProductSection';
+import ChooseBrand from './components/sell-flow/ChooseBrand';
+import SelectModel from './components/sell-flow/SelectModel';
+import DeviceStepper from './components/sell-flow/DeviceStepper';
+import SelectAddress from './components/sell-flow/SelectAddress';
+import SlotBooking from './components/sell-flow/SlotBooking';
+import PreviewPage from './components/sell-flow/PreviewPage';
+import SuccessPage from './components/sell-flow/SuccessPage';
+
+// Account
+import MyAccountPage from './components/account/MyAccountPage';
+import type { MenuTab } from './components/account/MyAccountPage';
+import MyOrderPage from './components/account/MyOrderPage';
+import MyAddressesPage from './components/account/MyAddressesPage';
+import MyWalletPage from './components/account/MyWalletPage';
+import PassbookPage from './components/account/PassbookPage';
+import AccountDetailsPage from './components/account/AccountDetailsPage';
+import HelpdeskPage from './components/account/HelpdeskPage';
+import RaiseDisputePage from './components/account/RaiseDisputePage';
+import FeedbackPage from './components/account/FeedbackPage';
+import KYCPage from './components/account/KYCPage';
+
+// Pages
+// import ContactUsPage from './components/pages/ContactUsPage';
+// import RefundPolicyPage from './components/pages/RefundPolicyPage';
+// import TermsAndConditionsPage from './components/pages/TermsAndConditionsPage';
+// import PrivacyPolicyPage from './components/pages/PrivacyPolicyPage';
+// import TermsOfUsePage from './components/pages/TermsOfUsePage';
+// import CookiesPolicyPage from './components/pages/CookiesPolicyPage';
+// import BecomePartnerPage from './components/pages/BecomePartnerPage';
+// import CareerPage from './components/pages/CareerPage';
+
+function Home() {
+  return (
+    <main className="flex-grow">
+      <HeroBanner />
+      <CategorySlider />
+      <SellOldDevice />
+      <DownloadAppBanner />
+      <CustomerReviews />
+      <TopBrands />
+      <BlogSlider />
+      <FAQSection />
+    </main>
+  );
+}
+
+function AppRoutes() {
+  const navigate = useNavigate();
+
+  const handleNavClick = (tab: MenuTab | 'Passbook') => {
+    if (tab === 'Dashboard') {
+      navigate('/my-account');
+    } else if (tab === 'Passbook') {
+      navigate('/my-account/passbook');
+    } else {
+      navigate(`/my-account/${tab.replace(/\s+/g, '-').toLowerCase()}`);
     }
   };
 
-  const handleWithdraw = () => {
-    const value = parseFloat(amount);
-    if (value && value > 0 && value <= balance) {
-      setBalance(balance - value);
-      setAmount('');
-    }
+  const handleBreadcrumbClick = (path: string) => {
+    if (path === 'home') navigate('/');
+    if (path === 'account') navigate('/my-account');
+    if (path === 'wallet') navigate('/my-account/my-wallet');
+  };
+
+  const handleLogout = () => {
+    console.log('User logged out');
+    navigate('/');
+  };
+
+  const accountProps = {
+    username: 'User',
+    onLogout: handleLogout,
+    onNavClick: handleNavClick,
+    onBreadcrumbClick: handleBreadcrumbClick,
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">
-            💰 FlipCash
-          </h1>
-          <p className="text-gray-500">Your Digital Wallet</p>
-        </div>
-
-        {/* Balance Display */}
-        <div className="bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl p-6 mb-6 text-white">
-          <p className="text-sm opacity-90 mb-1">Current Balance</p>
-          <p className="text-4xl font-bold">
-            ${balance.toFixed(2)}
-          </p>
-        </div>
-
-        {/* Input Field */}
-        <div className="mb-6">
-          <label className="block text-gray-700 text-sm font-semibold mb-2">
-            Amount
-          </label>
-          <input
-            type="number"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            placeholder="Enter amount"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-        </div>
-
-        {/* Action Buttons */}
-        <div className="grid grid-cols-2 gap-4">
-          <button
-            onClick={handleDeposit}
-            className="bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 transform hover:scale-105 active:scale-95"
-          >
-            Deposit
-          </button>
-          <button
-            onClick={handleWithdraw}
-            className="bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 transform hover:scale-105 active:scale-95"
-          >
-            Withdraw
-          </button>
-        </div>
-
-        {/* Recent Transactions */}
-        <div className="mt-8 pt-6 border-t border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-800 mb-3">
-            Quick Actions
-          </h3>
-          <div className="grid grid-cols-3 gap-2">
-            <button
-              onClick={() => setAmount('10')}
-              className="bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-3 rounded-lg text-sm font-medium transition"
-            >
-              $10
-            </button>
-            <button
-              onClick={() => setAmount('50')}
-              className="bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-3 rounded-lg text-sm font-medium transition"
-            >
-              $50
-            </button>
-            <button
-              onClick={() => setAmount('100')}
-              className="bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-3 rounded-lg text-sm font-medium transition"
-            >
-              $100
-            </button>
-          </div>
-        </div>
+    <>
+      <HeaderRibbon />
+      <MainNavbar isLoggedIn={false} onAccountClick={() => navigate('/my-account')} />
+      
+      <div className="pt-[0px]">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/blog" element={<BlogSection />} />
+          {/* <Route path="/blog/:id" element={<BlogDetailPage />} /> */}
+          <Route path="/faq" element={<FAQSection />} />
+          <Route path="/about" element={<AboutSection />} />
+          <Route path="/sell-old-product" element={<SellOldDevice />} />
+          <Route path="/select-brand" element={<ChooseBrand />} />
+          <Route path="/select-model" element={<SelectModel />} />
+          {/* <Route path="/contact" element={<ContactUsPage />} />
+          <Route path="/refund-policy" element={<RefundPolicyPage />} />
+          <Route path="/terms" element={<TermsAndConditionsPage />} />
+          <Route path="/privacy" element={<PrivacyPolicyPage />} />
+          <Route path="/terms-of-use" element={<TermsOfUsePage />} />
+          <Route path="/cookies-policy" element={<CookiesPolicyPage />} />
+          <Route path="/partner" element={<BecomePartnerPage />} />
+          <Route path="/career" element={<CareerPage />} /> */}
+          <Route path="/device-stepper" element={<DeviceStepper onSellNow={() => navigate('/select-address')} />} />
+          <Route path="/select-address" element={<SelectAddress onNext={() => navigate('/slot-booking')} />} />
+          <Route path="/slot-booking" element={<SlotBooking onNext={() => navigate('/confirmation')} />} />
+          <Route path="/confirmation" element={<PreviewPage onBack={() => navigate(-1)} onConfirm={() => navigate('/success')} />} />
+          <Route path="/success" element={<SuccessPage onGoHome={() => navigate('/')} onViewLeads={() => navigate('/my-account/my-orders')} />} />
+          
+          <Route path="/my-account" element={<MyAccountPage {...accountProps} />} />
+          <Route path="/my-account/my-orders" element={<MyOrderPage {...accountProps} />} />
+          <Route path="/my-account/my-wallet" element={<MyWalletPage {...accountProps} />} />
+          <Route path="/my-account/passbook" element={<PassbookPage {...accountProps} />} />
+          <Route path="/my-account/addresses" element={<MyAddressesPage {...accountProps} />} />
+          <Route path="/my-account/account-details" element={<AccountDetailsPage {...accountProps} />} />
+          <Route path="/my-account/helpdesk" element={<HelpdeskPage {...accountProps} />} />
+          <Route path="/my-account/raise-dispute" element={<RaiseDisputePage {...accountProps} />} />
+          <Route path="/my-account/feedback" element={<FeedbackPage {...accountProps} />} />
+          <Route path="/my-account/kyc" element={<KYCPage {... accountProps } />} />
+          <Route path="/my-account/bank" element={<MyAccountPage {...accountProps} />} />
+          
+        </Routes>
       </div>
-    </div>
+
+      <Footer />
+    </>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <SellFlowProvider>
+        <Router>
+          <AppRoutes />
+        </Router>
+      </SellFlowProvider>
+    </AuthProvider>
   );
 }
 

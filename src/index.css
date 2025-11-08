@@ -1,3 +1,12 @@
+/* src/index.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* You can add any global base styles here, but tailwind.config.js handles the animation */
+body {
+  font-family: 'Inter', sans-serif; /* A nice default font */
+}
+html {
+  scroll-behavior: smooth;
+}
