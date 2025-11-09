@@ -1,7 +1,4 @@
 // ImageCache.ts
-
-import * as React from 'react';
-
 /**
  * Image Cache Entry Interface
  */
