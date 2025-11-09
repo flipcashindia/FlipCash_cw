@@ -45,6 +45,7 @@ import HelpdeskPage from './components/account/HelpdeskPage';
 import RaiseDisputePage from './components/account/RaiseDisputePage';
 import FeedbackPage from './components/account/FeedbackPage';
 import KYCPage from './components/account/KYCPage';
+import LeadDetailPage from './components/pages/LeadDetailPage';
 
 // Pages
 // import ContactUsPage from './components/pages/ContactUsPage';
@@ -130,6 +131,7 @@ function AppRoutes() {
           <Route path="/slot-booking" element={<SlotBooking onNext={() => navigate('/confirmation')} />} />
           <Route path="/confirmation" element={<PreviewPage onBack={() => navigate(-1)} onConfirm={() => navigate('/success')} />} />
           <Route path="/success" element={<SuccessPage onGoHome={() => navigate('/')} onViewLeads={() => navigate('/my-account/my-orders')} />} />
+          <Route path="/lead/:leadId" element={<LeadDetailPage />} />
           
           <Route path="/my-account" element={<MyAccountPage {...accountProps} />} />
           <Route path="/my-account/my-orders" element={<MyOrderPage {...accountProps} />} />

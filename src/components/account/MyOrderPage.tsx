@@ -1,8 +1,43 @@
 import React, { useState, useEffect } from 'react';
-import { Package, Clock, CheckCircle, XCircle, AlertCircle, Truck, Search, DollarSign, FileCheck } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { 
+  Package, 
+  Clock, 
+  CheckCircle, 
+  XCircle, 
+  AlertCircle, 
+  Truck, 
+  Search, 
+  DollarSign, 
+  FileCheck, 
+  Loader2,
+  ChevronRight
+} from 'lucide-react';
 import * as leadsService from '../../api/services/leadsService';
-import type { Lead } from '../../api/types/leads.types';
+// Removed the broken import
 import type { MenuTab } from './MyAccountPage';
+import { motion, AnimatePresence } from 'framer-motion';
+
+// --- START OF FIX: Defined LeadList interface ---
+// Based on your LeadListSerializer
+interface LeadList {
+  id: string;
+  lead_number: string;
+  device_name: string;
+  brand_name: string;
+  storage: string;
+  color: string;
+  estimated_price: string;
+  final_price: string | null;
+  status: string;
+  status_display: string;
+  assigned_partner_name: string | null;
+  preferred_date: string;
+  preferred_time_slot: string;
+  pickup_date_display: string | null;
+  created_at: string;
+}
+// --- END OF FIX ---
 
 interface MyOrderPageProps {
   username: string;
@@ -11,29 +46,114 @@ interface MyOrderPageProps {
   onLogout: () => void;
 }
 
-// Status configuration with display names and colors
-const STATUS_CONFIG = {
-  all: { label: 'All Orders', color: 'bg-gray-100 hover:bg-gray-200', activeColor: 'bg-teal-600' },
-  booked: { label: 'Booked', color: 'bg-blue-50 hover:bg-blue-100', activeColor: 'bg-blue-600' },
-  partner_assigned: { label: 'Partner Assigned', color: 'bg-indigo-50 hover:bg-indigo-100', activeColor: 'bg-indigo-600' },
-  en_route: { label: 'En Route', color: 'bg-purple-50 hover:bg-purple-100', activeColor: 'bg-purple-600' },
-  checked_in: { label: 'Checked In', color: 'bg-yellow-50 hover:bg-yellow-100', activeColor: 'bg-yellow-600' },
-  inspecting: { label: 'Inspecting', color: 'bg-orange-50 hover:bg-orange-100', activeColor: 'bg-orange-600' },
-  offer_made: { label: 'Offer Made', color: 'bg-amber-50 hover:bg-amber-100', activeColor: 'bg-amber-600' },
-  negotiating: { label: 'Negotiating', color: 'bg-pink-50 hover:bg-pink-100', activeColor: 'bg-pink-600' },
-  accepted: { label: 'Accepted', color: 'bg-green-50 hover:bg-green-100', activeColor: 'bg-green-600' },
-  payment_processing: { label: 'Payment Processing', color: 'bg-teal-50 hover:bg-teal-100', activeColor: 'bg-teal-600' },
-  completed: { label: 'Completed', color: 'bg-emerald-50 hover:bg-emerald-100', activeColor: 'bg-emerald-600' },
-  cancelled: { label: 'Cancelled', color: 'bg-red-50 hover:bg-red-100', activeColor: 'bg-red-600' },
-  disputed: { label: 'Disputed', color: 'bg-rose-50 hover:bg-rose-100', activeColor: 'bg-rose-600' },
-  expired: { label: 'Expired', color: 'bg-gray-50 hover:bg-gray-100', activeColor: 'bg-gray-600' }
+// --- Branded Status Configuration ---
+const STATUS_CONFIG: Record<string, { label: string; filterColor: string; filterActive: string; badgeColor: string; Icon: React.ReactNode }> = {
+  all: { 
+    label: 'All Orders', 
+    filterColor: 'bg-gray-100 hover:bg-gray-200 text-gray-800', 
+    filterActive: 'bg-[#1C1C1B] text-white', 
+    badgeColor: 'bg-gray-100 text-gray-800',
+    Icon: <Package size={16} />
+  },
+  booked: { 
+    label: 'Booked', 
+    filterColor: 'bg-[#FEC925]/10 hover:bg-[#FEC925]/20 text-[#b48f00]', 
+    filterActive: 'bg-[#FEC925] text-[#1C1C1B]', 
+    badgeColor: 'bg-[#FEC925]/20 text-[#b48f00]',
+    Icon: <Clock size={16} /> 
+  },
+  partner_assigned: { 
+    label: 'Partner Assigned', 
+    filterColor: 'bg-[#FEC925]/10 hover:bg-[#FEC925]/20 text-[#b48f00]', 
+    filterActive: 'bg-[#FEC925] text-[#1C1C1B]', 
+    badgeColor: 'bg-[#FEC925]/20 text-[#b48f00]',
+    Icon: <FileCheck size={16} /> 
+  },
+  en_route: { 
+    label: 'En Route', 
+    filterColor: 'bg-[#FEC925]/10 hover:bg-[#FEC925]/20 text-[#b48f00]', 
+    filterActive: 'bg-[#FEC925] text-[#1C1C1B]', 
+    badgeColor: 'bg-[#FEC925]/20 text-[#b48f00]',
+    Icon: <Truck size={16} /> 
+  },
+  checked_in: { 
+    label: 'Checked In', 
+    filterColor: 'bg-[#FEC925]/10 hover:bg-[#FEC925]/20 text-[#b48f00]', 
+    filterActive: 'bg-[#FEC925] text-[#1C1C1B]', 
+    badgeColor: 'bg-[#FEC925]/20 text-[#b48f00]',
+    Icon: <CheckCircle size={16} /> 
+  },
+  inspecting: { 
+    label: 'Inspecting', 
+    filterColor: 'bg-[#FEC925]/10 hover:bg-[#FEC925]/20 text-[#b48f00]', 
+    filterActive: 'bg-[#FEC925] text-[#1C1C1B]', 
+    badgeColor: 'bg-[#FEC925]/20 text-[#b48f00]',
+    Icon: <Search size={16} /> 
+  },
+  offer_made: { 
+    label: 'Offer Made', 
+    filterColor: 'bg-[#FEC925]/10 hover:bg-[#FEC925]/20 text-[#b48f00]', 
+    filterActive: 'bg-[#FEC925] text-[#1C1C1B]', 
+    badgeColor: 'bg-[#FEC925]/20 text-[#b48f00]',
+    Icon: <DollarSign size={16} /> 
+  },
+  negotiating: { 
+    label: 'Negotiating', 
+    filterColor: 'bg-[#FEC925]/10 hover:bg-[#FEC925]/20 text-[#b48f00]', 
+    filterActive: 'bg-[#FEC925] text-[#1C1C1B]', 
+    badgeColor: 'bg-[#FEC925]/20 text-[#b48f00]',
+    Icon: <DollarSign size={16} /> 
+  },
+  accepted: { 
+    label: 'Accepted', 
+    filterColor: 'bg-[#1B8A05]/10 hover:bg-[#1B8A05]/20 text-[#1B8A05]', 
+    filterActive: 'bg-[#1B8A05] text-white', 
+    badgeColor: 'bg-[#1B8A05]/20 text-[#1B8A05]',
+    Icon: <CheckCircle size={16} /> 
+  },
+  payment_processing: { 
+    label: 'Payment Processing', 
+    filterColor: 'bg-[#1B8A05]/10 hover:bg-[#1B8A05]/20 text-[#1B8A05]', 
+    filterActive: 'bg-[#1B8A05] text-white', 
+    badgeColor: 'bg-[#1B8A05]/20 text-[#1B8A05]',
+    Icon: <CheckCircle size={16} /> 
+  },
+  completed: { 
+    label: 'Completed', 
+    filterColor: 'bg-[#1B8A05]/10 hover:bg-[#1B8A05]/20 text-[#1B8A05]', 
+    filterActive: 'bg-[#1B8A05] text-white', 
+    badgeColor: 'bg-[#1B8A05]/20 text-[#1B8A05]',
+    Icon: <CheckCircle size={16} /> 
+  },
+  cancelled: { 
+    label: 'Cancelled', 
+    filterColor: 'bg-[#FF0000]/10 hover:bg-[#FF0000]/20 text-[#FF0000]', 
+    filterActive: 'bg-[#FF0000] text-white', 
+    badgeColor: 'bg-[#FF0000]/10 text-[#FF0000]',
+    Icon: <XCircle size={16} /> 
+  },
+  disputed: { 
+    label: 'Disputed', 
+    filterColor: 'bg-[#FF0000]/10 hover:bg-[#FF0000]/20 text-[#FF0000]', 
+    filterActive: 'bg-[#FF0000] text-white', 
+    badgeColor: 'bg-[#FF0000]/10 text-[#FF0000]',
+    Icon: <AlertCircle size={16} /> 
+  },
+  expired: { 
+    label: 'Expired', 
+    filterColor: 'bg-gray-100 hover:bg-gray-200 text-gray-800', 
+    filterActive: 'bg-[#1C1C1B] text-white', 
+    badgeColor: 'bg-gray-100 text-gray-800',
+    Icon: <Clock size={16} /> 
+  }
 };
 
 const MyOrderPage: React.FC<MyOrderPageProps> = ({ username, onNavClick, onBreadcrumbClick, onLogout }) => {
-  const [leads, setLeads] = useState<Lead[]>([]);
+  const [leads, setLeads] = useState<LeadList[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('all');
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadLeads();
@@ -41,12 +161,23 @@ const MyOrderPage: React.FC<MyOrderPageProps> = ({ username, onNavClick, onBread
 
   const loadLeads = async () => {
     try {
+      setLoading(true); // Set loading to true on every new fetch
       setError(null);
-      const params = filter !== 'all' ? { status: filter } : {};
-      const data = await leadsService.getLeads(params);
-      console.log('lead data: ', data);
       
-      // Handle both paginated and direct array responses
+      let params: { status?: string; status_in?: string } = {};
+      
+      if (filter === 'all') {
+        // No params, get all
+      } else if (filter === 'active') {
+        // Get all non-terminal statuses
+        params = { status_in: 'booked,partner_assigned,en_route,checked_in,inspecting,offer_made,negotiating,accepted,payment_processing' };
+      } else {
+        // Get a specific status
+        params = { status: filter };
+      }
+      
+      const data = await leadsService.getLeads(params);
+      
       if (Array.isArray(data)) {
         setLeads(data);
       } else if (data && data.results && Array.isArray(data.results)) {
@@ -63,181 +194,150 @@ const MyOrderPage: React.FC<MyOrderPageProps> = ({ username, onNavClick, onBread
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'booked': 
-        return <Clock className="text-blue-600" size={20} />;
-      case 'partner_assigned': 
-        return <FileCheck className="text-indigo-600" size={20} />;
-      case 'en_route':
-        return <Truck className="text-purple-600" size={20} />;
-      case 'checked_in': 
-        return <CheckCircle className="text-yellow-600" size={20} />;
-      case 'inspecting': 
-        return <Search className="text-orange-600" size={20} />;
-      case 'offer_made':
-      case 'negotiating':
-        return <DollarSign className="text-amber-600" size={20} />;
-      case 'accepted': 
-      case 'payment_processing':
-        return <CheckCircle className="text-green-600" size={20} />;
-      case 'completed': 
-        return <CheckCircle className="text-emerald-600" size={20} />;
-      case 'cancelled': 
-      case 'disputed': 
-      case 'expired':
-        return <XCircle className="text-red-600" size={20} />;
-      default: 
-        return <Package className="text-gray-600" size={20} />;
-    }
+  const handleViewDetails = (leadId: string) => {
+    navigate(`/lead/${leadId}`); // Navigate to the dynamic lead detail page
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'booked':
-        return 'text-blue-600 bg-blue-50';
-      case 'partner_assigned':
-        return 'text-indigo-600 bg-indigo-50';
-      case 'en_route':
-        return 'text-purple-600 bg-purple-50';
-      case 'checked_in':
-        return 'text-yellow-600 bg-yellow-50';
-      case 'inspecting':
-        return 'text-orange-600 bg-orange-50';
-      case 'offer_made':
-      case 'negotiating':
-        return 'text-amber-600 bg-amber-50';
-      case 'accepted':
-      case 'payment_processing':
-        return 'text-green-600 bg-green-50';
-      case 'completed':
-        return 'text-emerald-600 bg-emerald-50';
-      case 'cancelled':
-      case 'disputed':
-      case 'expired':
-        return 'text-red-600 bg-red-50';
-      default:
-        return 'text-gray-600 bg-gray-50';
-    }
+  const getStatusAppearance = (status: string) => {
+    return STATUS_CONFIG[status] || STATUS_CONFIG.all;
   };
+
+  const filterTabs = ['all', 'active', ...Object.keys(STATUS_CONFIG).filter(k => k !== 'all' && STATUS_CONFIG[k].label)];
 
   return (
-    <section className="bg-white min-h-screen">
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8">My Orders</h1>
+    <section className="min-h-screen bg-gradient-to-br from-[#F0F7F6] via-white to-[#EAF6F4] py-8">
+      <div className="container mx-auto px-4">
+        <h1 className="text-3xl font-bold text-[#1C1C1B] mb-8">My Orders</h1>
 
         {/* Status Filter Buttons */}
-        <div className="flex gap-3 mb-6 overflow-x-auto pb-2">
-          {Object.entries(STATUS_CONFIG).map(([status, config]) => (
-            <button
-              key={status}
-              onClick={() => setFilter(status)}
-              className={`px-4 py-2 rounded-lg whitespace-nowrap font-medium transition-all ${
-                filter === status 
-                  ? `${config.activeColor} text-white shadow-md` 
-                  : `${config.color} text-gray-700`
-              }`}
-            >
-              {config.label}
-            </button>
-          ))}
+        <div className="mb-6">
+          <div className="flex flex-nowrap overflow-x-auto gap-3 pb-2 -mx-4 px-4" style={{ scrollbarWidth: 'none', '-ms-overflow-style': 'none' }}>
+            {filterTabs.map((statusKey) => {
+              const config = getStatusAppearance(statusKey);
+              const label = statusKey === 'active' ? 'Active' : config.label;
+              const color = statusKey === 'active' ? 'bg-[#FEC925]/10 hover:bg-[#FEC925]/20 text-[#b48f00]' : config.filterColor;
+              const activeColor = statusKey === 'active' ? 'bg-[#FEC925] text-[#1C1C1B]' : config.filterActive;
+
+              return (
+                <button
+                  key={statusKey}
+                  onClick={() => setFilter(statusKey)}
+                  className={`px-4 py-2 rounded-lg whitespace-nowrap font-semibold text-sm transition-all ${
+                    filter === statusKey 
+                      ? `${activeColor} shadow-md` 
+                      : `${color}`
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        {loading ? (
-          <div className="text-center py-16">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
-            <p className="mt-4 text-gray-600">Loading orders...</p>
-          </div>
-        ) : error ? (
-          <div className="text-center py-16">
-            <AlertCircle className="mx-auto text-red-600 mb-4" size={48} />
-            <p className="text-red-600">{error}</p>
-            <button 
-              onClick={loadLeads}
-              className="mt-4 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700"
-            >
-              Retry
-            </button>
-          </div>
-        ) : leads.length === 0 ? (
-          <div className="text-center py-16">
-            <Package className="mx-auto text-gray-400 mb-4" size={64} />
-            <p className="text-gray-500 text-lg">No orders found</p>
-            {filter !== 'all' && (
-              <button
-                onClick={() => setFilter('all')}
-                className="mt-4 text-teal-600 hover:underline"
+        <AnimatePresence mode="wait">
+          {loading ? (
+            <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center py-16">
+              <Loader2 className="animate-spin text-[#FEC925] mx-auto mb-4" size={48} />
+              <p className="mt-4 text-gray-600 font-semibold">Loading orders...</p>
+            </motion.div>
+          ) : error ? (
+            <motion.div key="error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center py-16">
+              <AlertCircle className="mx-auto text-[#FF0000] mb-4" size={48} />
+              <p className="text-[#FF0000] font-semibold">{error}</p>
+              <button 
+                onClick={loadLeads}
+                className="mt-6 px-6 py-3 bg-gradient-to-r from-[#FEC925] to-[#1B8A05] text-[#1C1C1B] rounded-xl font-bold hover:shadow-lg transition"
               >
-                View all orders
+                Try Again
               </button>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {leads.map(lead => (
-              <div key={lead.id} className="bg-white border rounded-xl p-6 shadow hover:shadow-lg transition">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex-1">
-                    <h3 className="font-bold text-lg">{lead.lead_number}</h3>
-                    <p className="text-gray-600 text-base">{lead.brand_name} {lead.device_name}</p>
-                    <p className="text-sm text-gray-500 mt-1">
-                      {lead.pickup_date_display || new Date(lead.created_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${getStatusColor(lead.status)}`}>
-                    {getStatusIcon(lead.status)}
-                    <span className="font-semibold text-sm">
-                      {lead.status_display}
-                    </span>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4 text-sm mb-4">
-                  <div>
-                    <p className="text-gray-600">Storage</p>
-                    <p className="font-semibold">{lead.storage || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600">Color</p>
-                    <p className="font-semibold capitalize">{lead.color || 'N/A'}</p>
-                  </div>
-                  {lead.preferred_time_slot && (
-                    <div className="col-span-2">
-                      <p className="text-gray-600">Pickup Slot</p>
-                      <p className="font-semibold">{lead.preferred_time_slot}</p>
-                    </div>
-                  )}
-                  {lead.assigned_partner_name && (
-                    <div className="col-span-2">
-                      <p className="text-gray-600">Assigned Partner</p>
-                      <p className="font-semibold">{lead.assigned_partner_name}</p>
-                    </div>
-                  )}
-                </div>
-                
-                <div className="mt-4 pt-4 border-t flex justify-between items-center">
-                  <div>
-                    <p className="text-sm text-gray-600">Estimated Price</p>
-                    <span className="text-2xl font-bold text-teal-600">
-                      ₹{parseFloat(lead.estimated_price).toLocaleString()}
-                    </span>
-                    {lead.final_price && (
-                      <p className="text-sm text-green-600 mt-1 font-semibold">
-                        Final: ₹{parseFloat(lead.final_price).toLocaleString()}
-                      </p>
-                    )}
-                  </div>
-                  <button 
-                    onClick={() => {/* TODO: Navigate to lead details */}}
-                    className="px-6 py-2 text-teal-600 border-2 border-teal-600 rounded-lg hover:bg-teal-50 font-medium transition-colors"
+            </motion.div>
+          ) : leads.length === 0 ? (
+            <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center py-16">
+              <Package className="mx-auto text-gray-400 mb-4" size={64} />
+              <p className="text-gray-500 text-xl font-semibold">No orders found</p>
+              {filter !== 'all' && (
+                <button
+                  onClick={() => setFilter('all')}
+                  className="mt-4 text-[#1B8A05] font-bold hover:underline"
+                >
+                  View all orders
+                </button>
+              )}
+            </motion.div>
+          ) : (
+            <motion.div 
+              key="list" 
+              className="space-y-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              {leads.map(lead => {
+                const statusInfo = getStatusAppearance(lead.status);
+                return (
+                  <motion.div 
+                    key={lead.id} 
+                    className="bg-white border-2 border-transparent hover:border-[#FEC925] rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
                   >
-                    View Details
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+                    <div className="flex flex-col sm:flex-row justify-between items-start mb-4">
+                      <div className="flex-1 mb-4 sm:mb-0">
+                        <h3 className="font-bold text-xl text-[#1C1C1B]">{lead.lead_number}</h3>
+                        <p className="text-gray-700 text-lg">{lead.brand_name} {lead.device_name}</p>
+                        <p className="text-sm text-gray-500 mt-1">
+                          {lead.pickup_date_display || new Date(lead.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long' })}
+                        </p>
+                      </div>
+                      <div className={`flex items-center gap-2 px-3 py-2 rounded-full ${statusInfo.badgeColor} flex-shrink-0`}>
+                        {React.cloneElement(statusInfo.Icon as React.ReactElement, { className: 'w-5 h-5' })}
+                        <span className="font-semibold text-sm">
+                          {lead.status_display}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm mb-6">
+                      <div>
+                        <p className="text-gray-600">Storage</p>
+                        <p className="font-semibold text-[#1C1C1B]">{lead.storage || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600">Color</p>
+                        <p className="font-semibold text-[#1C1C1B] capitalize">{lead.color || 'N/A'}</p>
+                      </div>
+                      <div className="col-span-2">
+                        <p className="text-gray-600">Assigned Partner</p>
+                        <p className="font-semibold text-[#1C1C1B]">{lead.assigned_partner_name || 'Pending assignment...'}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col sm:flex-row justify-between items-center">
+                      <div className="mb-4 sm:mb-0 text-center sm:text-left">
+                        <p className="text-sm text-gray-600">Estimated Price</p>
+                        <span className="text-3xl font-bold text-[#1B8A05]">
+                          ₹{parseFloat(lead.estimated_price).toLocaleString('en-IN')}
+                        </span>
+                        {lead.final_price && (
+                          <p className="text-sm text-[#1B8A05] mt-1 font-semibold">
+                            (Final: ₹{parseFloat(lead.final_price).toLocaleString('en-IN')})
+                          </p>
+                        )}
+                      </div>
+                      <button 
+                        onClick={() => handleViewDetails(lead.id)}
+                        className="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-[#FEC925] to-[#1B8A05] text-[#1C1C1B] rounded-xl font-bold hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                      >
+                        View Details
+                        <ChevronRight size={20} />
+                      </button>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </section>
   );
