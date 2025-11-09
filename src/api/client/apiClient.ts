@@ -1,7 +1,8 @@
 /**
  * API Client - Axios instance with JWT interceptors
  * Base URL: /api/v1/
- * ✅ CORRECTED: Refresh token endpoint, error handling
+ * * NOTE: The CORS issue (blocking 'X-Device-Id') is a BACKEND configuration problem.
+ * The backend must allow 'X-Device-Id' and 'Authorization' in Access-Control-Allow-Headers.
  */
 
 import axios, { 
@@ -11,9 +12,8 @@ import axios, {
   type AxiosResponse 
 } from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-// const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1'; // Changed fallback
-// const API_TIMEOUT = parseInt(import.meta.env.VITE_API_TIMEOUT || '30000');
+// ✅ IMPROVED: Using a relative path fallback is safer for production if the API is on the same domain.
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1'; 
 const API_TIMEOUT = parseInt(import.meta.env.VITE_API_TIMEOUT || '30000');
 
 export const apiClient: AxiosInstance = axios.create({
@@ -36,7 +36,7 @@ apiClient.interceptors.request.use(
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
 
-    // Add device ID
+    // Add device ID (Header that must be allowed by the backend's CORS policy)
     const deviceId = localStorage.getItem('device_id') || generateDeviceId();
     if (deviceId && config.headers) {
       config.headers['X-Device-Id'] = deviceId;
@@ -56,13 +56,12 @@ apiClient.interceptors.request.use(
     return config;
   },
   (error: AxiosError) => {
-    // console.error('❌ REQUEST ERROR:', error);
     return Promise.reject(error);
   }
 );
 
 // ============================================================================
-// RESPONSE INTERCEPTOR
+// RESPONSE INTERCEPTOR (Remaining logic is unchanged)
 // ============================================================================
 
 apiClient.interceptors.response.use(
@@ -80,7 +79,7 @@ apiClient.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
-    // ✅ CORRECTED: Handle 401 with token refresh
+    // Handle 401 with token refresh
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
@@ -90,7 +89,7 @@ apiClient.interceptors.response.use(
           throw new Error('No refresh token available');
         }
 
-        // ✅ CORRECTED: Backend endpoint is /accounts/token/refresh/
+        // Retry refresh request
         const response = await axios.post(
           `${API_BASE_URL}/accounts/token/refresh/`,
           { refresh: refreshToken }
@@ -119,7 +118,7 @@ apiClient.interceptors.response.use(
       }
     }
 
-    // ✅ CORRECTED: Better error transformation
+    // Better error transformation
     const errorResponse = error.response?.data as any;
     const transformedError = {
       message: errorResponse?.detail 
@@ -140,7 +139,7 @@ apiClient.interceptors.response.use(
 );
 
 // ============================================================================
-// HELPERS
+// HELPERS (Unchanged)
 // ============================================================================
 
 export const setAuthTokens = (accessToken: string, refreshToken: string): void => {
@@ -158,7 +157,7 @@ export const isAuthenticated = (): boolean => {
   return !!localStorage.getItem('access_token');
 };
 
-// ✅ ADDED: Generate unique device ID
+// Generate unique device ID
 const generateDeviceId = (): string => {
   return `web_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
 };
