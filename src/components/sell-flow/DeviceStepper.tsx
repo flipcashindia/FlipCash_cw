@@ -18,7 +18,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 
 // API Configuration
-const API_BASE_URL = 'http://localhost:8000/api/v1'; // As per your file
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // --- Interfaces (No changes needed here based on the issue) ---
 interface DeviceAttribute {

@@ -29,7 +29,7 @@ const CategorySlider: React.FC = () => {
     const loadCategories = async () => {
     try {
       const data = (await catalogService.getCategories()) as Category[] | PaginatedResponse<Category>;
-      console.log('API response data:', data); // Log data to confirm structure
+      // console.log('API response data:', data); // Log data to confirm structure
 
       // --- 🔑 CORRECTED LINE ---
       const categoriesArray = Array.isArray(data) ? data : data.results || [];
