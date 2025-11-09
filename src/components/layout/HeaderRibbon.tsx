@@ -1,7 +1,6 @@
 import React from 'react';
 import { Facebook, Instagram } from 'lucide-react';
 
-// Simple X icon component
 const XIcon: React.FC = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M18 6 6 18" />
@@ -11,14 +10,14 @@ const XIcon: React.FC = () => (
 
 const HeaderRibbon: React.FC = () => {
   const ribbonMessages = [
-    'Return extended to 60 days',
-    'Life-time Guarantees',
-    'Limited-Time Offer',
+    'New Pickup Requests Available',
+    'Instant Commission Payouts',
+    'Earn More on High-Value Devices',
+    'Grow Your Business With Flipcash',
   ];
 
   return (
     <div className="bg-black text-white py-2 overflow-hidden relative flex items-center h-[40px]">
-      {/* Fixed Social Icons */}
       <div className="absolute left-0 top-0 bottom-0 z-10 flex items-center px-4 md:px-6 space-x-3 bg-black">
         <a href="#" aria-label="Facebook" className="hover:opacity-70 transition-opacity">
           <Facebook size={18} />
@@ -31,22 +30,13 @@ const HeaderRibbon: React.FC = () => {
         </a>
       </div>
 
-      {/* Scrolling Content Wrapper. 
-        We render the content twice inside the `animate-infinite-scroll` div 
-        to create the seamless loop.
-      */}
-      <div 
-        className="flex whitespace-nowrap animate-infinite-scroll"
-        style={{ paddingLeft: '120px' }} // Pushes content past the fixed icons
-      >
-        {/* FIRST render of the content */}
+      <div className="flex whitespace-nowrap animate-infinite-scroll" style={{ paddingLeft: '120px' }}>
         {ribbonMessages.map((message, index) => (
           <div key={`first-${index}`} className="flex items-center mx-4">
             <span className="w-1.5 h-1.5 bg-white rounded-full mr-3"></span>
             <span>{message}</span>
           </div>
         ))}
-        {/* SECOND render of the content */}
         {ribbonMessages.map((message, index) => (
           <div key={`second-${index}`} className="flex items-center mx-4">
             <span className="w-1.5 h-1.5 bg-white rounded-full mr-3"></span>
@@ -59,4 +49,3 @@ const HeaderRibbon: React.FC = () => {
 };
 
 export default HeaderRibbon;
-

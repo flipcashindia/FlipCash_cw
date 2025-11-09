@@ -14,8 +14,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import * as leadsService from '../../api/services/leadsService';
-// Removed the broken import
-import type { MenuTab } from './MyAccountPage';
+// ✅ CORRECTION: Removed unused 'MenuTab' import
 import { motion, AnimatePresence } from 'framer-motion';
 
 // --- START OF FIX: Defined LeadList interface ---
@@ -31,7 +30,8 @@ interface LeadList {
   final_price: string | null;
   status: string;
   status_display: string;
-  assigned_partner_name: string | null;
+  // ✅ CORRECTION: Updated type to match service response (string | undefined)
+  assigned_partner_name: string | null | undefined;
   preferred_date: string;
   preferred_time_slot: string;
   pickup_date_display: string | null;
@@ -40,14 +40,15 @@ interface LeadList {
 // --- END OF FIX ---
 
 interface MyOrderPageProps {
-  username: string;
-  onNavClick: (tab: MenuTab) => void;
-  onBreadcrumbClick: (path: string) => void;
-  onLogout: () => void;
+  // Unused props removed from destructuring
+  // username: string;
+  // onNavClick: (tab: MenuTab) => void;
+  // onBreadcrumbClick: (path: string) => void;
+  // onLogout: () => void;
 }
 
 // --- Branded Status Configuration ---
-const STATUS_CONFIG: Record<string, { label: string; filterColor: string; filterActive: string; badgeColor: string; Icon: React.ReactNode }> = {
+const STATUS_CONFIG: Record<string, { label: string; filterColor: string; filterActive: string; badgeColor: string; Icon: React.ReactElement }> = {
   all: { 
     label: 'All Orders', 
     filterColor: 'bg-gray-100 hover:bg-gray-200 text-gray-800', 
@@ -148,7 +149,7 @@ const STATUS_CONFIG: Record<string, { label: string; filterColor: string; filter
   }
 };
 
-const MyOrderPage: React.FC<MyOrderPageProps> = ({ username, onNavClick, onBreadcrumbClick, onLogout }) => {
+const MyOrderPage: React.FC<MyOrderPageProps> = ({}) => {
   const [leads, setLeads] = useState<LeadList[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -181,7 +182,8 @@ const MyOrderPage: React.FC<MyOrderPageProps> = ({ username, onNavClick, onBread
       if (Array.isArray(data)) {
         setLeads(data);
       } else if (data && data.results && Array.isArray(data.results)) {
-        setLeads(data.results);
+        // This assignment is now valid
+        setLeads(data.results as LeadList[]);
       } else {
         setLeads([]);
       }
@@ -211,7 +213,7 @@ const MyOrderPage: React.FC<MyOrderPageProps> = ({ username, onNavClick, onBread
 
         {/* Status Filter Buttons */}
         <div className="mb-6">
-          <div className="flex flex-nowrap overflow-x-auto gap-3 pb-2 -mx-4 px-4" style={{ scrollbarWidth: 'none', '-ms-overflow-style': 'none' }}>
+          <div className="flex flex-nowrap overflow-x-auto gap-3 pb-2 -mx-4 px-4" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
             {filterTabs.map((statusKey) => {
               const config = getStatusAppearance(statusKey);
               const label = statusKey === 'active' ? 'Active' : config.label;
@@ -222,7 +224,7 @@ const MyOrderPage: React.FC<MyOrderPageProps> = ({ username, onNavClick, onBread
                 <button
                   key={statusKey}
                   onClick={() => setFilter(statusKey)}
-                  className={`px-4 py-2 rounded-lg whitespace-nowrap font-semibold text-sm transition-all ${
+                  className={`px-4 py-2 rounded-lg whitespace-noww-rap font-semibold text-sm transition-all ${
                     filter === statusKey 
                       ? `${activeColor} shadow-md` 
                       : `${color}`
@@ -290,7 +292,8 @@ const MyOrderPage: React.FC<MyOrderPageProps> = ({ username, onNavClick, onBread
                         </p>
                       </div>
                       <div className={`flex items-center gap-2 px-3 py-2 rounded-full ${statusInfo.badgeColor} flex-shrink-0`}>
-                        {React.cloneElement(statusInfo.Icon as React.ReactElement, { className: 'w-5 h-5' })}
+                        {/* This call is valid because Icon is React.ReactElement */}
+                        {React.cloneElement(statusInfo.Icon as React.ReactElement<any>, { className: 'w-5 h-5' })}
                         <span className="font-semibold text-sm">
                           {lead.status_display}
                         </span>

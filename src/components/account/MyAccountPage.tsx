@@ -1,9 +1,9 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
-import { LayoutDashboard, ShoppingBag, Wallet, MapPin, User, HelpCircle, Flag, MessageSquare, LogOut } from 'lucide-react';
+import { ShoppingBag, Wallet, MapPin, User, HelpCircle, Flag, MessageSquare, LogOut } from 'lucide-react';
 
-export type MenuTab = 'Dashboard' | 'My Orders' | 'My Wallet'| 'Addresses' | 'Account Details' | 'Helpdesk' | 'Raise Dispute' | 'Feedback';
+export type MenuTab = 'Dashboard' | 'My Orders' | 'My Wallet'| 'Addresses' | 'Account Details' |'KYC' | 'Bank' | 'Helpdesk' | 'Raise Dispute' | 'Feedback';
 
 interface MyAccountPageProps {
   username?: string;
@@ -14,7 +14,7 @@ interface MyAccountPageProps {
 
 const MyAccountPage: React.FC<MyAccountPageProps> = ({ username, onNavClick, onLogout }) => {
   const { user, isAuthenticated } = useAuth();
-  const displayName = user?.full_name || username || 'User';
+  const displayName = user?.name || username || 'User';
 
   const menuItems = [
     { id: 'My Orders' as MenuTab, label: 'My Orders', icon: ShoppingBag, color: 'text-blue-600' },

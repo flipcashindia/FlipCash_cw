@@ -54,7 +54,7 @@ apiClient.interceptors.request.use(
     return config;
   },
   (error: AxiosError) => {
-    console.error('❌ REQUEST ERROR:', error);
+    // console.error('❌ REQUEST ERROR:', error);
     return Promise.reject(error);
   }
 );

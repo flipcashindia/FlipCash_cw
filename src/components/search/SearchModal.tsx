@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { X, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import * as catalogService from '../../api/services/catalogService';
-import type { Model, Brand } from '../../api/types/catalog.types';
+import type { Model } from '../../api/types/catalog.types';
 
 interface SearchModalProps {
   onClose: () => void;

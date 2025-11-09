@@ -11,7 +11,7 @@ interface ImageCacheEntry {
 }
 
 const CACHE_PREFIX = 'img_cache_';
-const DEFAULT_TTL = 900000; // 15 minutes
+const DEFAULT_TTL = 100000; // 15 minutes 900000
 const MAX_CACHE_SIZE = 10 * 1024 * 1024; // 10MB max total cache size
 const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB max per image
 
@@ -289,3 +289,7 @@ if (typeof window !== 'undefined') {
     cleanupExpiredImages();
   }, 600000); // 10 minutes
 }
+
+
+
+

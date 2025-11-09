@@ -21,7 +21,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess }
   const [step, setStep] = useState<'phone' | 'otp' | 'profile'>('phone');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
-  const [requestId, setRequestId] = useState('');
+  const [_requestId, setRequestId] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [resendCooldown, setResendCooldown] = useState(0);
@@ -30,11 +30,14 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess }
     name: '',
     email: '',
   });
+  
+
 
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
+    
 
     try {
       let formattedPhone = phone.trim();

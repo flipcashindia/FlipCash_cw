@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Wallet, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
+// ✅ CORRECTION: Removed unused icons 'ArrowUpRight' and 'ArrowDownLeft'
+import { Wallet } from 'lucide-react';
 import * as financeService from '../../api/services/financeService';
 import type { MenuTab } from './MyAccountPage';
 
 interface MyWalletPageProps {
-  username: string;
+  // ✅ CORRECTION: Removed unused prop 'username'
   onNavClick: (tab: MenuTab | 'Passbook') => void;
-  onBreadcrumbClick: (path: string) => void;
-  onLogout: () => void;
+  // ✅ CORRECTION: Removed unused prop 'onBreadcrumbClick'
+  // ✅ CORRECTION: Removed unused prop 'onLogout'
 }
 
-const MyWalletPage: React.FC<MyWalletPageProps> = ({ username, onNavClick, onBreadcrumbClick, onLogout }) => {
+// ✅ CORRECTION: Removed unused props from destructuring
+const MyWalletPage: React.FC<MyWalletPageProps> = ({ onNavClick }) => {
   const [balance, setBalance] = useState('0');
   const [loading, setLoading] = useState(true);
   const [amount, setAmount] = useState('');
@@ -36,9 +38,11 @@ const MyWalletPage: React.FC<MyWalletPageProps> = ({ username, onNavClick, onBre
     setLoading(true);
     try {
       await financeService.createPayout({
-        amount: parseFloat(amount),
-        method: 'upi',
-        account_ref: upiId,
+        // ✅ CORRECTION: Changed from parseFloat(amount) [number] to amount [string]
+        // This fixes the "Type 'number' is not assignable to type 'string'" error.
+        amount: amount,
+        payout_method: 'upi',
+        upi_id: upiId,
       });
       await loadWallet();
       setAmount('');

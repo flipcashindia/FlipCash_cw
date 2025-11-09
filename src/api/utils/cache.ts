@@ -33,7 +33,7 @@ export const getCachedData = <T>(key: string): T | null => {
 export const setCachedData = <T>(
   key: string, 
   data: T, 
-  ttl: number = 900000 // 15 minutes default
+  ttl: number = 1200000 // 15 minutes default
 ): void => {
   const now = Date.now();
   cache.set(key, {

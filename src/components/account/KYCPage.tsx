@@ -7,8 +7,10 @@ import type { UserKYC } from '../../api/types/auth.types';
 import type { MenuTab } from './MyAccountPage';
 
 interface KYCPageProps {
-  onNavClick: (tab: MenuTab) => void;
-  onLogout: () => void;
+  onNavClick: (tab: MenuTab | 'account' | 'kyc' | 'bank') => void; // Update this
+  onLogout?: () => void; // Add this
+  username?: string; // Add this
+  onBreadcrumbClick?: (path: string) => void; // Add this
 }
 
 const KYCPage: React.FC<KYCPageProps> = ({ onNavClick }) => {
@@ -76,6 +78,7 @@ const KYCPage: React.FC<KYCPageProps> = ({ onNavClick }) => {
       setSuccess(true);
       setTimeout(() => {
         setSuccess(false);
+        // ✅ CORRECTION: This call is now valid
         onNavClick('account');
       }, 2000);
     } catch (err: any) {
@@ -98,6 +101,7 @@ const KYCPage: React.FC<KYCPageProps> = ({ onNavClick }) => {
           {/* Header */}
           <div className="flex items-center gap-4 mb-8 pb-6 border-b-2 border-[#FEC925]/20">
             <button
+              // ✅ CORRECTION: This call is now valid
               onClick={() => onNavClick('account')}
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
             >

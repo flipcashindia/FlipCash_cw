@@ -1,32 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Plus, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Edit2, Trash2 } from 'lucide-react';
 import * as authService from '../../api/services/authService';
 import type { UserAddress, CreateAddressRequest } from '../../api/types/auth.types';
-import type { MenuTab } from './MyAccountPage';
 
 interface MyAddressesPageProps {
-  username: string;
-  onNavClick: (tab: MenuTab) => void;
-  onBreadcrumbClick: (path: string) => void;
-  onLogout: () => void;
+  // These props were unused in the component logic
+  // username: string;
+  // onNavClick: (tab: MenuTab) => void;
+  // onBreadcrumbClick: (path: string) => void;
+  // onLogout: () => void;
 }
 
-const MyAddressesPage: React.FC<MyAddressesPageProps> = ({ username, onNavClick, onBreadcrumbClick, onLogout }) => {
+const MyAddressesPage: React.FC<MyAddressesPageProps> = () => {
   const [addresses, setAddresses] = useState<UserAddress[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [editId, setEditId] = useState<number | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
   
   const [formData, setFormData] = useState<CreateAddressRequest>({
-    address_type: 'home',
-    full_name: '',
-    phone: '',
+    type: 'home', // Corrected from 'address_type' to 'type'
     line1: '',
     line2: '',
-    landmark: '',
     city: '',
     state: '',
-    pincode: '',
+    postal_code: '',
     is_default: false,
   });
 
@@ -50,6 +47,7 @@ const MyAddressesPage: React.FC<MyAddressesPageProps> = ({ username, onNavClick,
     setLoading(true);
     try {
       if (editId) {
+        // editId is now a string, matching updateAddress service
         await authService.updateAddress(editId, formData);
       } else {
         await authService.createAddress(formData);
@@ -65,9 +63,11 @@ const MyAddressesPage: React.FC<MyAddressesPageProps> = ({ username, onNavClick,
     }
   };
 
-  const handleDelete = async (id: number) => {
+  // Corrected to accept 'id: string' to match UserAddress.id type
+  const handleDelete = async (id: string) => {
     if (!confirm('Delete this address?')) return;
     try {
+      // id is now a string, matching deleteAddress service
       await authService.deleteAddress(id);
       await loadAddresses();
     } catch (error: any) {
@@ -81,10 +81,11 @@ const MyAddressesPage: React.FC<MyAddressesPageProps> = ({ username, onNavClick,
       line1: address.line1,
       line2: address.line2 || '',
       city: address.city,
-      state: address.state || "Delhi",
+      state: address.state || "Delhi", // Default state if null
       postal_code: address.postal_code,
       is_default: address.is_default,
     });
+    // address.id is a string, matching editId state type
     setEditId(address.id);
     setShowForm(true);
   };
@@ -144,6 +145,7 @@ const MyAddressesPage: React.FC<MyAddressesPageProps> = ({ username, onNavClick,
                 </div>
                 <div className="flex gap-2">
                   <button onClick={() => handleEdit(addr)} className="p-2 text-blue-600 hover:bg-blue-50 rounded"><Edit2 size={20} /></button>
+                  {/* Correctly passing string addr.id to handleDelete */}
                   <button onClick={() => handleDelete(addr.id)} className="p-2 text-red-600 hover:bg-red-50 rounded"><Trash2 size={20} /></button>
                 </div>
               </div>

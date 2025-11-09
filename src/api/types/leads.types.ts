@@ -36,7 +36,7 @@ export interface Lead {
           'offer_made' | 'negotiating' | 'accepted' | 'payment_processing' | 
           'completed' | 'cancelled' | 'disputed' | 'expired';
   status_display: string;
-  assigned_partner_name?: string;
+  assigned_partner_name?: string | null | undefined;
   is_flagged: boolean;
   is_urgent: boolean;
   days_old?: number;

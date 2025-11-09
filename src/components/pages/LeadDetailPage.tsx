@@ -8,8 +8,6 @@ import {
   Package,
   Wallet,
   MapPin,
-  Calendar,
-  Clock,
   User,
   Shield,
   CheckCircle,

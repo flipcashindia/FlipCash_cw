@@ -2,16 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 import * as financeService from '../../api/services/financeService';
 import type { Transaction } from '../../api/types/finance.types';
-import type { MenuTab } from './MyAccountPage';
+// import type { MenuTab } from './MyAccountPage';
 
 interface PassbookPageProps {
-  username: string;
-  onNavClick: (tab: MenuTab) => void;
-  onBreadcrumbClick: (path: string) => void;
-  onLogout: () => void;
+  // ✅ CORRECTION: Removed unused props
+  // username: string;
+  // onNavClick: (tab: MenuTab) => void;
+  // onBreadcrumbClick: (path: string) => void;
+  // onLogout: () => void;
 }
 
-const PassbookPage: React.FC<PassbookPageProps> = ({ username, onNavClick, onBreadcrumbClick, onLogout }) => {
+// ✅ CORRECTION: Removed unused props from destructuring
+const PassbookPage: React.FC<PassbookPageProps> = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

@@ -1,28 +1,26 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { 
-  ArrowLeft, 
-  ArrowRight, 
-  Upload, 
-  CheckCircle, 
-  MapPin, 
-  Calendar, 
-  Clock, 
+import {
+  ArrowLeft,
+  ArrowRight,
+  Upload,
+  CheckCircle,
+  MapPin,
+  Calendar,
+  Clock,
   Loader2,
   HelpCircle,
-  Package,
   Wallet,
   AlertTriangle,
   X,
   Camera,
-  Layers // Icon for Variants
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // API Configuration
 const API_BASE_URL = 'http://localhost:8000/api/v1'; // As per your file
 
-// --- Interfaces ---
+// --- Interfaces (No changes needed here based on the issue) ---
 interface DeviceAttribute {
   id: string;
   name: string;
@@ -52,15 +50,13 @@ interface LeadResponse {
 }
 interface UserAddress {
   id: string; // Address UUID
-  full_name: string;
-  phone: string;
-  address_line1: string;
-  address_line2?: string;
-  landmark?: string;
+  line1: string;
+  line2?: string;
   city: string;
   state: string;
-  pincode: string;
+  postal_code: string;
   is_default: boolean;
+  type?: string;
 }
 interface TimeSlot {
   value: string; // "morning"
@@ -75,10 +71,10 @@ interface ModelData {
   color_options: string[];
   images?: Array<{ image_url: string; is_primary: boolean }>;
 }
-interface ModelLocationState {
-  id: string;
-  name: string;
-  thumbnail: string;
+// This interface defines the expected shape of data in location.state
+interface LocationState {
+  modelId?: string;
+  model?: { id: string; name: string; thumbnail: string; };
 }
 
 // Helper to capitalize strings
@@ -110,18 +106,21 @@ const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ message, onDismiss }) => (
 const DeviceStepper: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { model: modelFromState } = location.state as { model: ModelLocationState } || {};
-  const modelId = modelFromState?.id;
-
+  
+  // ✅ FIX: Correctly access the model ID from location.state
+  // Check for modelId directly (used by SellOldDevice.tsx) OR model.id
+  const { modelId: modelIdFromState, model: modelFromState } = (location.state || {}) as LocationState;
+  const modelId = modelIdFromState || modelFromState?.id;
+  
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [modelDetails, setModelDetails] = useState<ModelData | null>(null);
-  
+
   const [groupedAttributes, setGroupedAttributes] = useState<Record<string, DeviceAttribute[]>>({});
   const [conditionResponses, setConditionResponses] = useState<Record<string, any>>({});
-  
+
   const [imei, setImei] = useState('');
   const [estimate, setEstimate] = useState<EstimateResponse | null>(null);
 
@@ -142,11 +141,14 @@ const DeviceStepper: React.FC = () => {
     if (modelId) {
       loadStepperData(modelId);
     } else {
-      setError('No model selected. Redirecting...');
-      setTimeout(() => navigate('/'), 2000);
+      // ✅ CHANGE: Don't automatically redirect. Just show an error.
+      // The user may have reached this via a bad URL.
+      setError('Error: Device model ID is missing. Please select a device to begin.');
+      setLoading(false);
     }
   }, [modelId]);
 
+  // --- MODIFIED FUNCTION ---
   const loadStepperData = async (id: string) => {
     try {
       setLoading(true);
@@ -168,8 +170,27 @@ const DeviceStepper: React.FC = () => {
 
       const modelData: ModelData = await modelRes.json();
       const attrsData: DeviceAttribute[] = await attrsRes.json();
-      
-      setModelDetails(modelData);
+
+      // --- START: MODIFICATION (Applying defaults if API fields are empty) ---
+      const defaultStorage = ['64 GB', '128GB', '256GB', '512GB'];
+      const defaultRAM = ['4GB', '6GB', '8GB', '12GB'];
+      const defaultColors = ['Black', 'White', 'Silver', 'Gold', 'Blue', 'Red', 'Green', 'Purple', 'Graphite'];
+
+      const processedModelDetails: ModelData = {
+        ...modelData,
+        storage_options: (modelData.storage_options && modelData.storage_options.length > 0)
+          ? modelData.storage_options
+          : defaultStorage,
+        ram_options: (modelData.ram_options && modelData.ram_options.length > 0)
+          ? modelData.ram_options
+          : defaultRAM,
+        color_options: (modelData.color_options && modelData.color_options.length > 0)
+          ? modelData.color_options
+          : defaultColors,
+      };
+
+      setModelDetails(processedModelDetails); // Set the processed data
+      // --- END: MODIFICATION ---
 
       const sorted = attrsData.sort((a, b) => a.display_order - b.display_order);
       const groups = sorted.reduce((acc: Record<string, DeviceAttribute[]>, attr) => {
@@ -187,6 +208,8 @@ const DeviceStepper: React.FC = () => {
       setLoading(false);
     }
   };
+  // --- END: MODIFIED FUNCTION ---
+
 
   const loadAddresses = async () => {
     try {
@@ -201,6 +224,7 @@ const DeviceStepper: React.FC = () => {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.detail || `Failed to load addresses (${res.status})`);
       }
+      // Assuming API returns results array directly for now
       const data: UserAddress[] = await res.json();
       setAddresses(data);
       const defaultAddr = data.find((a) => a.is_default);
@@ -226,21 +250,28 @@ const DeviceStepper: React.FC = () => {
 
     // Step 1 (Variant) -> Step 2 (Condition)
     if (step === 1) {
-      if (modelDetails?.storage_options?.length > 0 && !conditionResponses['storage']) {
+      // ✅ FIX: Use simple guard clause and direct access instead of optional chaining
+      if (!modelDetails) {
+        setError('Device details are still loading. Please wait a moment.');
+        return;
+      }
+      
+      // ✅ FIX: Removed unnecessary optional chaining from the build errors
+      if (modelDetails.storage_options.length > 0 && !conditionResponses['storage']) {
         setError('Please select a storage option.');
         return;
       }
-      if (modelDetails?.ram_options?.length > 0 && !conditionResponses['ram']) {
+      if (modelDetails.ram_options.length > 0 && !conditionResponses['ram']) {
         setError('Please select a RAM option.');
         return;
       }
-      if (modelDetails?.color_options?.length > 0 && !conditionResponses['color']) {
+      if (modelDetails.color_options.length > 0 && !conditionResponses['color']) {
         setError('Please select a color option.');
         return;
       }
       setStep(2);
-    } 
-    
+    }
+
     // Step 2 (Condition) -> Step 3 (IMEI)
     else if (step === 2) {
       const allAttributes = Object.values(groupedAttributes).flat();
@@ -257,17 +288,17 @@ const DeviceStepper: React.FC = () => {
 
     // Step 3 (IMEI) -> Step 4 (Estimate)
     else if (step === 3) {
-      await handleGetEstimate(); 
-    } 
-    
+      await handleGetEstimate();
+    }
+
     // Step 4 (Estimate) -> Step 5 (Pickup)
     else if (step === 4) {
       const addressesLoaded = await loadAddresses();
       if (addressesLoaded) {
         setStep(5);
       }
-    } 
-    
+    }
+
     // Step 5 (Pickup) -> Step 6 (Photos)
     else if (step === 5) {
       if (!selectedAddressId) {
@@ -292,7 +323,7 @@ const DeviceStepper: React.FC = () => {
         return;
       }
       await handleCreateLeadAndUploadPhotos();
-    } 
+    }
   };
 
   const handleBack = () => {
@@ -311,7 +342,7 @@ const DeviceStepper: React.FC = () => {
       setError("You must be logged in to get an estimate. Please log in and try again.");
       return;
     }
-    
+
     try {
       setLoading(true);
       setError(null);
@@ -348,8 +379,8 @@ const DeviceStepper: React.FC = () => {
         let errorMessage = 'Failed to get estimate.';
         if (typeof errorDetail === 'object') {
           const firstKey = Object.keys(errorDetail)[0];
-          const errorValue = Array.isArray(errorDetail[firstKey]) 
-            ? errorDetail[firstKey].join(' ') 
+          const errorValue = Array.isArray(errorDetail[firstKey])
+            ? errorDetail[firstKey].join(' ')
             : JSON.stringify(errorDetail[firstKey]);
           errorMessage = `Error: ${firstKey} - ${errorValue}`;
         } else if (typeof errorDetail === 'string') {
@@ -379,13 +410,12 @@ const DeviceStepper: React.FC = () => {
     }
 
     let newLeadId = ''; // To store the ID of the created lead
-    
+
     try {
       setLoading(true);
       setError(null);
 
       // --- 1. Create Lead (using LeadCreateSerializer fields) ---
-      // This payload ONLY contains what LeadCreateSerializer accepts
       const leadPayload = {
         estimate_id: estimate.estimate_id,
         pickup_address_id: selectedAddressId,
@@ -416,18 +446,17 @@ const DeviceStepper: React.FC = () => {
         }
         throw new Error(`${errorMessage} (${leadRes.status})`);
       }
-      
+
       const leadData: LeadResponse = await leadRes.json();
       newLeadId = leadData.id; // Get the new Lead's ID
 
       // --- 2. Upload Photos (using the new leadId) ---
-      // This calls the correct endpoint: POST /api/v1/leads/{id}/upload_photo/
       for (const photo of photos) {
         const formData = new FormData();
         formData.append('photo', photo);
         formData.append('description', 'Device Photo');
 
-        const uploadRes = await fetch(`${API_BASE_URL}/leads/${newLeadId}/upload_photo/`, {
+        const uploadRes = await fetch(`${API_BASE_URL}/leads/leads/${newLeadId}/upload_photo/`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}` },
           body: formData
@@ -454,7 +483,7 @@ const DeviceStepper: React.FC = () => {
     }
   };
 
-  // --- (Photo/Date Handlers are Unchanged) ---
+  // --- (Photo/Date Handlers) ---
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (photos.length + files.length > 6) {
@@ -477,7 +506,7 @@ const DeviceStepper: React.FC = () => {
     return maxDate.toISOString().split('T')[0];
   };
 
-  // --- (Loading Render is Unchanged) ---
+  // --- (Loading Render) ---
   const renderLoading = () => (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#F0F7F6] via-white to-[#EAF6F4]">
       <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
@@ -487,13 +516,14 @@ const DeviceStepper: React.FC = () => {
     </div>
   );
 
-  // --- START OF FIX: renderAttributeInput ---
+  // --- (renderAttributeInput) ---
   const renderAttributeInput = (attr: DeviceAttribute) => {
     if (attr.is_boolean) {
       // This now saves "true" and "false" as STRINGS
       return (
         <div className="grid grid-cols-2 gap-3">
           <button
+            type="button"
             onClick={() => handleResponseChange(attr.name, "true")}
             className={`p-4 border-2 rounded-xl font-medium transition-all ${
               conditionResponses[attr.name] === "true" // Check for string
@@ -504,6 +534,7 @@ const DeviceStepper: React.FC = () => {
             Yes
           </button>
           <button
+            type="button"
             onClick={() => handleResponseChange(attr.name, "false")}
             className={`p-4 border-2 rounded-xl font-medium transition-all ${
               conditionResponses[attr.name] === "false" // Check for string
@@ -522,6 +553,7 @@ const DeviceStepper: React.FC = () => {
           {attr.options.map((option) => (
             <button
               key={option}
+              type="button"
               onClick={() => handleResponseChange(attr.name, option)}
               className={`p-4 border-2 rounded-xl text-left transition-all ${
                 conditionResponses[attr.name] === option
@@ -536,9 +568,10 @@ const DeviceStepper: React.FC = () => {
       );
     }
   };
-  // --- END OF FIX ---
-  
+
+  // --- (renderVariantOptions) ---
   const renderVariantOptions = (title: string, fieldName: 'storage' | 'ram' | 'color', options: string[]) => {
+    // Check if options is defined and has elements
     if (!options || options.length === 0) return null;
     return (
       <fieldset className="space-y-4">
@@ -550,7 +583,7 @@ const DeviceStepper: React.FC = () => {
           {options.map((option) => (
             <button
               key={option}
-              type="button" 
+              type="button"
               onClick={() => handleResponseChange(fieldName, option)}
               className={`p-4 border-2 rounded-xl text-center transition-all ${
                 conditionResponses[fieldName] === option
@@ -566,7 +599,7 @@ const DeviceStepper: React.FC = () => {
     );
   };
 
-  
+
   if (loading && step === 1) {
     return renderLoading();
   }
@@ -574,13 +607,13 @@ const DeviceStepper: React.FC = () => {
   return (
     <section className="min-h-screen bg-gradient-to-br from-[#F0F7F6] via-white to-[#EAF6F4] py-8 md:py-12">
       <div className="container mx-auto px-4 max-w-4xl">
-        
+
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
             {['Variant', 'Condition', 'IMEI', 'Estimate', 'Pickup', 'Photos'].map((label, idx) => (
               <div key={idx} className="flex-1 text-center last:flex-initial">
                 <div className={`w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center font-bold text-lg ${
-                  step > idx + 1 ? 'bg-[#1B8A05] text-white' : 
+                  step > idx + 1 ? 'bg-[#1B8A05] text-white' :
                   step === idx + 1 ? 'bg-gradient-to-br from-[#FEC925] to-[#1B8A05] text-[#1C1C1B]' : 'bg-gray-300 text-gray-700'
                 }`}>
                   {step > idx + 1 ? <CheckCircle size={20} /> : idx + 1}
@@ -592,7 +625,7 @@ const DeviceStepper: React.FC = () => {
             ))}
           </div>
           <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-            <motion.div 
+            <motion.div
               className="h-full bg-gradient-to-r from-[#FEC925] to-[#1B8A05] rounded-full"
               initial={{ width: 0 }}
               animate={{ width: `${((step - 1) / 5) * 100}%` }}
@@ -607,7 +640,7 @@ const DeviceStepper: React.FC = () => {
           )}
         </AnimatePresence>
 
-        <motion.div 
+        <motion.div
           key={step}
           initial={{ opacity: 0, x: 50 }}
           animate={{ opacity: 1, x: 0 }}
@@ -616,7 +649,7 @@ const DeviceStepper: React.FC = () => {
         >
           <div className="bg-white p-6 md:p-8 rounded-2xl shadow-2xl border-2 border-[#FEC925]/20">
             <AnimatePresence mode="wait">
-              
+
               {/* --- Step 1: Variant Selection --- */}
               {step === 1 && modelDetails && (
                 <motion.div key="step1" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-8">
@@ -625,12 +658,13 @@ const DeviceStepper: React.FC = () => {
                     <p className="text-lg text-gray-600">{modelDetails.name}</p>
                   </div>
                   <div className="w-full h-48 bg-gray-100 rounded-xl flex items-center justify-center p-4">
-                    <img 
+                    <img
                       src={modelDetails.images?.[0]?.image_url || modelFromState?.thumbnail}
                       alt={modelDetails.name}
                       className="max-h-full max-w-full object-contain"
                     />
                   </div>
+                  {/* These functions will now render the defaults if the original options were empty */}
                   {renderVariantOptions('Storage', 'storage', modelDetails.storage_options)}
                   {renderVariantOptions('RAM', 'ram', modelDetails.ram_options)}
                   {renderVariantOptions('Color', 'color', modelDetails.color_options)}
@@ -732,11 +766,13 @@ const DeviceStepper: React.FC = () => {
                         {addresses.map((addr) => (
                           <button key={addr.id} onClick={() => setSelectedAddressId(addr.id)} className={`w-full p-4 border-2 rounded-xl text-left transition-all ${selectedAddressId === addr.id ? 'bg-[#FEC925]/20 border-[#FEC925] ring-2 ring-[#FEC925]/50' : 'border-gray-300 hover:border-[#FEC925]'}`}>
                             <p className="font-bold text-[#1C1C1B]">{addr.type} {addr.is_default && <span className="text-xs font-medium bg-[#1B8A05] text-white px-2 py-0.5 rounded-full ml-2">Default</span>}</p>
+                            {/* ✅ FIX: Removed unnecessary optional chaining to fix TS18048 errors */}
                             <p className="text-sm text-gray-700">{addr.line1} {addr.line2}</p>
+                            {/* ✅ FIX: Removed unnecessary optional chaining to fix TS18048 errors */}
                             <p className="text-sm text-gray-700">{addr.city}, {addr.state} - {addr.postal_code}</p>
                           </button>
                         ))}
-                        </div>
+                      </div>
                     )}
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

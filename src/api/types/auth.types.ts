@@ -8,6 +8,7 @@ export interface User {
   phone: string;
   email: string | null;
   name: string | null;
+  full_name: string | null;
   role: 'consumer';
   is_active: boolean;
   is_phone_verified: boolean;
@@ -20,11 +21,14 @@ export interface User {
   created_at: string;
   updated_at: string;
   last_login: string | null;
+  profile_completion_percentage: number;
 }
 
 export interface UserAddress {
   id: string;
   user: string;
+  full_name: string | null;
+  name:string;
   type: 'home' | 'office' | 'other';
   line1: string;
   line2: string;
@@ -60,7 +64,7 @@ export interface SendOTPRequest {
 }
 
 export interface SendOTPResponse {
-  // request_id: string;
+  request_id: string;
   message: string;
   next_resend_at: string | null;
 }
@@ -100,8 +104,8 @@ export interface CreateAddressRequest {
   city: string;
   state: string;
   postal_code: string;
-  country?: string;
-  is_default?: boolean;
+  country?: String;
+  is_default?: boolean ;
   latitude?: number;
   longitude?: number;
 }

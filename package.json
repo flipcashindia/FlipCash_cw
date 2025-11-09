@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tailwindcss/forms": "^0.5.10",
     "axios": "^1.13.1",
     "canvas-confetti": "^1.9.4",
     "framer-motion": "^12.23.24",
@@ -23,6 +24,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
+    "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^24.10.0",
     "@types/react": "^19.1.16",
     "@types/react-dom": "^19.1.9",

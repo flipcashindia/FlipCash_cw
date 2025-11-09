@@ -71,7 +71,7 @@ const MainNavbar: React.FC<MainNavbarProps> = () => {
 
   return (
     <>
-      <nav className="bg-white shadow-md sticky top-0 z-40 border-b-2 border-[#FEC925]/20">
+      <nav className="bg-[#ffe208] shadow-md sticky top-0 z-40 border-b-2 border-20">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             {/* Logo */}

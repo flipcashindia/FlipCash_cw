@@ -21,7 +21,8 @@ const TopBrands: React.FC = () => {
       if (categories.length > 0) {
         const phoneCat = categories.find(c => c.name.toLowerCase().includes('phone')) || categories[0];
         const data = await catalogService.getBrandsByCategory(phoneCat.id);
-        setBrands(data.filter(b => b.is_active).slice(0, 8));
+        
+        setBrands(data.filter(b => b.is_featured).slice(0, 8));
       }
     } catch (error) {
       console.error('Failed to load brands:', error);
@@ -30,7 +31,7 @@ const TopBrands: React.FC = () => {
     }
   };
 
-  const handleBrandClick = (brandId: number) => {
+  const handleBrandClick = (brandId: string) => {
     navigate('/select-model', { state: { brandId } });
   };
 
@@ -60,7 +61,7 @@ const TopBrands: React.FC = () => {
 };
 
 const BrandCard: React.FC<{ brand: Brand; onClick: () => void }> = ({ brand, onClick }) => {
-  const logoUrl = useImageCache(brand.logo_url);
+  const logoUrl = useImageCache(brand.logo);
 
   return (
     <div onClick={onClick} className="bg-white p-4 rounded-lg shadow hover:shadow-lg transition cursor-pointer">

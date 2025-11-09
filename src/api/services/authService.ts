@@ -31,16 +31,16 @@ export const verifyOTP = async (data: VerifyOTPRequest): Promise<VerifyOTPRespon
     const refreshToken = response.data.tokens.refresh;
     
     // ✅ ADD: Log before saving
-    console.log('Saving access token:', accessToken);
-    console.log('Saving refresh token:', refreshToken);
+    // console.log('Saving access token:', accessToken);
+    // console.log('Saving refresh token:', refreshToken);
     
     localStorage.setItem('access_token', accessToken);
     localStorage.setItem('refresh_token', refreshToken);
     localStorage.setItem('user', JSON.stringify(response.data.user));
     
     // ✅ ADD: Verify they were saved
-    console.log('Stored access token:', localStorage.getItem('access_token'));
-    console.log('Stored refresh token:', localStorage.getItem('refresh_token'));
+    // console.log('Stored access token:', localStorage.getItem('access_token'));
+    // console.log('Stored refresh token:', localStorage.getItem('refresh_token'));
   }
   return response.data;
 };

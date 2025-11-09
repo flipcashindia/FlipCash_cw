@@ -1,21 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  ArrowLeft, Building, CreditCard, Plus, Trash2, CheckCircle, 
-  AlertCircle, Star, Shield, Edit2 
+import {
+  ArrowLeft, Building, CreditCard, Plus, Trash2, CheckCircle,
+  AlertCircle, Star, Shield 
+  // ✅ CORRECTION: Removed unused 'Edit2' icon
 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+// import { useAuth } from '../../context/AuthContext';
 import * as authService from '../../api/services/authService';
 import type { PayoutBeneficiary } from '../../api/types/auth.types';
 import type { MenuTab } from './MyAccountPage';
 
 interface BankAccountsPageProps {
-  onNavClick: (tab: MenuTab) => void;
-  onLogout: () => void;
+  // ✅ CORRECTION: Updated type to allow 'account'
+  onNavClick: (tab: MenuTab | 'account') => void;
+  // ✅ CORRECTION: Removed unused 'onLogout' prop
 }
 
 const BankAccountsPage: React.FC<BankAccountsPageProps> = ({ onNavClick }) => {
-  const { user } = useAuth();
+  // ✅ CORRECTION: Removed unused 'user' variable
   const [beneficiaries, setBeneficiaries] = useState<PayoutBeneficiary[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -125,6 +127,7 @@ const BankAccountsPage: React.FC<BankAccountsPageProps> = ({ onNavClick }) => {
           {/* Header */}
           <div className="flex items-center gap-4 mb-8 pb-6 border-b-2 border-[#FEC925]/20">
             <button
+              // ✅ CORRECTION: This call is now valid
               onClick={() => onNavClick('account')}
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
@@ -436,7 +439,7 @@ const BankAccountsPage: React.FC<BankAccountsPageProps> = ({ onNavClick }) => {
                     {!beneficiary.is_primary && beneficiary.is_verified && (
                       <button
                         onClick={() => handleSetPrimary(beneficiary.id)}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-[#FEC925] text-[#1C1C1B] font-bold rounded-lg hover:bg-[#FEC925]/80 transition-all"
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-[#FEC9E5] text-[#1C1C1B] font-bold rounded-lg hover:bg-[#FEC9E5]/80 transition-all"
                       >
                         <Star size={16} />
                         Set as Primary

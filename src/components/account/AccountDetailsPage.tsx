@@ -16,7 +16,7 @@ interface AccountDetailsPageProps {
   onLogout: () => void;
 }
 
-const AccountDetailsPage: React.FC<AccountDetailsPageProps> = ({ onNavClick, onLogout }) => {
+const AccountDetailsPage: React.FC<AccountDetailsPageProps> = ({ onNavClick }) => {
   const { user, refreshUser } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -204,7 +204,7 @@ const AccountDetailsPage: React.FC<AccountDetailsPageProps> = ({ onNavClick, onL
                 
                 {user?.kyc_status !== 'submitted' && (
                   <button
-                    onClick={() => onNavClick('kyc')}
+                    onClick={() => onNavClick('KYC')}
                     className="w-full mt-4 flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-[#FEC925] to-[#1B8A05] text-[#1C1C1B] font-bold rounded-xl hover:shadow-xl transition-all"
                   >
                     <Shield size={20} />
@@ -276,7 +276,7 @@ const AccountDetailsPage: React.FC<AccountDetailsPageProps> = ({ onNavClick, onL
     </div>
     
     <button
-      onClick={() => onNavClick('bank')}
+      onClick={() => onNavClick('Bank')}
       className="w-full mt-4 flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-[#1B8A05] to-[#FEC925] text-white font-bold rounded-xl hover:shadow-xl transition-all transform hover:scale-[1.02] active:scale-[0.98]"
     >
       <Plus size={20} />

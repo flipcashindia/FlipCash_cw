@@ -7,11 +7,13 @@ export interface Category {
   name: string;
   slug: string;
   description: string;
-  icon: string | null;
+  title: string;
+  icon_url: string | null;
   is_active: boolean;
   sort_order: number;
   created_at: string;
   updated_at: string;
+  is_featured: boolean;
 }
 
 export interface Brand {
@@ -19,7 +21,8 @@ export interface Brand {
   name: string;
   slug: string;
   category: string[];
-  logo: string | null;
+  logo: string;
+  logo_url: string | null;
   description: string;
   country_of_origin: string;
   website: string;
@@ -27,6 +30,7 @@ export interface Brand {
   sort_order: number;
   created_at: string;
   updated_at: string;
+  is_featured: boolean;
 }
 
 export interface Model {
@@ -35,6 +39,7 @@ export interface Model {
   slug: string;
   brand: string;
   category: string;
+  thumbnail: string | null;
   model_number: string;
   launch_year: number | null;
   description: string;
