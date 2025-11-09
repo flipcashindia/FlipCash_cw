@@ -1,8 +1,10 @@
-/**
- * Image Cache - Cache images from API URLs in localStorage
- * ✅ ENHANCED: Better error handling, size limits, cleanup
- */
+// ImageCache.ts
 
+import * as React from 'react';
+
+/**
+ * Image Cache Entry Interface
+ */
 interface ImageCacheEntry {
   dataUrl: string;
   timestamp: number;
@@ -11,16 +13,103 @@ interface ImageCacheEntry {
 }
 
 const CACHE_PREFIX = 'img_cache_';
-const DEFAULT_TTL = 100000; // 15 minutes 900000
+// Default TTL is 15 minutes (900,000 milliseconds)
+const DEFAULT_TTL = 1200000; 
 const MAX_CACHE_SIZE = 10 * 1024 * 1024; // 10MB max total cache size
 const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB max per image
 
-// ✅ ENHANCED: Type-safe retrieval
+// --- Helper Functions (Internal) ---
+
+/**
+ * Generates a unique, collision-resistant cache key for a given URL.
+ * Uses Base64 of the URL, truncated to 128 chars for size safety and uniqueness.
+ * @param url The image URL.
+ */
+const generateCacheKey = (url: string): string => {
+  // Using 128 characters provides a much higher guarantee of uniqueness 
+  // than the original 50 characters, mitigating collision risk.
+  return CACHE_PREFIX + btoa(url).substring(0, 128);
+};
+
+/**
+ * Calculates the total size of all cached images in localStorage.
+ */
+export const getImageCacheSize = (): number => {
+  try {
+    let size = 0;
+    const keys = Object.keys(localStorage);
+
+    keys.forEach(key => {
+      if (key.startsWith(CACHE_PREFIX)) {
+        const item = localStorage.getItem(key);
+        if (item) {
+          // localStorage stores strings, so we use string length as size proxy
+          size += item.length;
+        }
+      }
+    });
+
+    return size;
+  } catch (error) {
+    console.error('Failed to calculate cache size:', error);
+    return 0;
+  }
+};
+
+/**
+ * Clears the oldest images to free up the required space. (Least Recently Saved eviction)
+ * @param requiredSpace The minimum number of bytes to free.
+ */
+const clearOldestImages = (requiredSpace: number): void => {
+  try {
+    const keys = Object.keys(localStorage);
+    const entries: Array<{ key: string; entry: ImageCacheEntry }> = [];
+
+    // 1. Get all cache entries with timestamps
+    keys.forEach(key => {
+      if (key.startsWith(CACHE_PREFIX)) {
+        const item = localStorage.getItem(key);
+        if (item) {
+          try {
+            const entry: ImageCacheEntry = JSON.parse(item);
+            entries.push({ key, entry });
+          } catch (e) { /* Ignore invalid JSON */ }
+        }
+      }
+    });
+
+    // 2. Sort by timestamp (oldest first)
+    entries.sort((a, b) => a.entry.timestamp - b.entry.timestamp);
+
+    // 3. Remove oldest until we have enough space
+    let freedSpace = 0;
+    for (const { key, entry } of entries) {
+      if (freedSpace >= requiredSpace) break;
+      localStorage.removeItem(key);
+      freedSpace += entry.size;
+    }
+
+    if (import.meta.env.VITE_ENABLE_DEBUG === 'true') {
+      console.log(`🧹 Cleared ${entries.length} old images to free ${(freedSpace / 1024).toFixed(2)}KB`);
+    }
+  } catch (error) {
+    console.error('Failed to clear old images:', error);
+  }
+};
+
+
+// --- Public API Functions ---
+
+/**
+ * Retrieves a cached image Data URL. Automatically removes expired entries.
+ * @param url The image URL to look up.
+ * @returns The Data URL string if found and valid, otherwise null.
+ */
 export const getCachedImage = (url: string | null | undefined): string | null => {
   if (!url) return null;
   
   try {
-    const cacheKey = CACHE_PREFIX + btoa(url).substring(0, 50);
+    const cacheKey = generateCacheKey(url);
     const cached = localStorage.getItem(cacheKey);
     
     if (!cached) return null;
@@ -28,6 +117,7 @@ export const getCachedImage = (url: string | null | undefined): string | null =>
     const entry: ImageCacheEntry = JSON.parse(cached);
     const now = Date.now();
     
+    // Check for expiration (TTL)
     if (now > entry.expiresAt) {
       localStorage.removeItem(cacheKey);
       return null;
@@ -40,7 +130,13 @@ export const getCachedImage = (url: string | null | undefined): string | null =>
   }
 };
 
-// ✅ ENHANCED: Size-aware caching
+/**
+ * Stores an image Data URL in the cache, performing size and capacity checks.
+ * @param url The original image URL.
+ * @param dataUrl The base64-encoded image data.
+ * @param ttl The Time-To-Live for the entry in milliseconds.
+ * @returns true if successful, false otherwise.
+ */
 export const setCachedImage = (
   url: string, 
   dataUrl: string, 
@@ -63,7 +159,7 @@ export const setCachedImage = (
       clearOldestImages(size);
     }
     
-    const cacheKey = CACHE_PREFIX + btoa(url).substring(0, 50);
+    const cacheKey = generateCacheKey(url);
     const now = Date.now();
     
     const entry: ImageCacheEntry = {
@@ -81,7 +177,12 @@ export const setCachedImage = (
   }
 };
 
-// ✅ ENHANCED: Better error handling and fallback
+/**
+ * Fetches an image from a URL, converts it to Data URL, and caches it.
+ * Falls back to the original URL on any failure (fetch error, size limit, read error).
+ * @param url The URL of the image to fetch.
+ * @returns A Promise resolving to the Data URL or the original URL (on failure/size limit).
+ */
 export const fetchAndCacheImage = async (url: string): Promise<string> => {
   const cached = getCachedImage(url);
   if (cached) return cached;
@@ -98,7 +199,7 @@ export const fetchAndCacheImage = async (url: string): Promise<string> => {
     // Check blob size before converting
     if (blob.size > MAX_IMAGE_SIZE) {
       console.warn('Image too large to cache, returning original URL');
-      return url;
+      return url; // Fallback to original URL
     }
     
     return new Promise((resolve, reject) => {
@@ -122,6 +223,10 @@ export const fetchAndCacheImage = async (url: string): Promise<string> => {
   }
 };
 
+
+/**
+ * Clears all image cache entries.
+ */
 export const clearImageCache = (): void => {
   try {
     const keys = Object.keys(localStorage);
@@ -142,67 +247,10 @@ export const clearImageCache = (): void => {
   }
 };
 
-// ✅ ENHANCED: Detailed size calculation
-export const getImageCacheSize = (): number => {
-  try {
-    let size = 0;
-    const keys = Object.keys(localStorage);
-    
-    keys.forEach(key => {
-      if (key.startsWith(CACHE_PREFIX)) {
-        const item = localStorage.getItem(key);
-        if (item) {
-          size += item.length;
-        }
-      }
-    });
-    
-    return size;
-  } catch (error) {
-    console.error('Failed to calculate cache size:', error);
-    return 0;
-  }
-};
-
-// ✅ ADDED: Clear oldest images to make space
-const clearOldestImages = (requiredSpace: number): void => {
-  try {
-    const keys = Object.keys(localStorage);
-    const entries: Array<{ key: string; entry: ImageCacheEntry }> = [];
-    
-    // Get all cache entries with timestamps
-    keys.forEach(key => {
-      if (key.startsWith(CACHE_PREFIX)) {
-        const item = localStorage.getItem(key);
-        if (item) {
-          try {
-            const entry: ImageCacheEntry = JSON.parse(item);
-            entries.push({ key, entry });
-          } catch {}
-        }
-      }
-    });
-    
-    // Sort by timestamp (oldest first)
-    entries.sort((a, b) => a.entry.timestamp - b.entry.timestamp);
-    
-    // Remove oldest until we have enough space
-    let freedSpace = 0;
-    for (const { key, entry } of entries) {
-      if (freedSpace >= requiredSpace) break;
-      localStorage.removeItem(key);
-      freedSpace += entry.size;
-    }
-    
-    if (import.meta.env.VITE_ENABLE_DEBUG === 'true') {
-      console.log(`🧹 Cleared ${entries.length} old images to free ${(freedSpace / 1024).toFixed(2)}KB`);
-    }
-  } catch (error) {
-    console.error('Failed to clear old images:', error);
-  }
-};
-
-// ✅ ADDED: Cleanup expired images
+/**
+ * Cleans up all images that have passed their expiration time (TTL).
+ * @returns The number of images removed.
+ */
 export const cleanupExpiredImages = (): number => {
   try {
     const now = Date.now();
@@ -220,7 +268,7 @@ export const cleanupExpiredImages = (): number => {
               removed++;
             }
           } catch {
-            // Invalid entry, remove it
+            // Invalid entry found, remove it
             localStorage.removeItem(key);
             removed++;
           }
@@ -239,22 +287,30 @@ export const cleanupExpiredImages = (): number => {
   }
 };
 
-// ✅ ENHANCED: React hook with loading state
+/**
+ * React Hook for lazy loading and caching an image.
+ * @param url The image URL.
+ * @returns The Data URL if cached, or the original URL while loading/on failure.
+ */
 export const useImageCache = (url: string | null | undefined): string => {
   if (!url) return '';
   
+  // 1. Check synchronously for cached image
   const cached = getCachedImage(url);
   if (cached) return cached;
   
-  // Trigger async fetch (don't await)
+  // 2. If not cached, trigger async fetch and cache (don't await)
   fetchAndCacheImage(url).catch(err => {
     console.error('Image cache fetch failed:', err);
   });
   
-  return url; // Return original URL while loading
+  // 3. Return original URL immediately to display a placeholder or initiate loading
+  return url; 
 };
 
-// ✅ ADDED: Cache statistics
+/**
+ * Returns statistics about the current cache usage.
+ */
 export const getImageCacheStats = () => {
   const keys = Object.keys(localStorage).filter(k => k.startsWith(CACHE_PREFIX));
   const totalSize = getImageCacheSize();
@@ -283,13 +339,13 @@ export const getImageCacheStats = () => {
   };
 };
 
-// ✅ ADDED: Auto cleanup every 10 minutes
+// --- Setup ---
+
+/**
+ * Automatically cleans up expired images every 10 minutes when running in a browser environment.
+ */
 if (typeof window !== 'undefined') {
   setInterval(() => {
     cleanupExpiredImages();
-  }, 600000); // 10 minutes
+  }, 600000); // 10 minutes (10 * 60 * 1000)
 }
-
-
-
-
