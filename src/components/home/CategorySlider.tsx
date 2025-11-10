@@ -160,7 +160,7 @@ const CategoryCard: React.FC<{ category: Category; onClick: () => void }> = ({ c
                 <img 
                     src={imageUrl} 
                     alt={category.title} 
-                    className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3" 
+                    className="w-32 mx-auto mb-1" 
                 />
             ) : (
                 <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 bg-gray-200 rounded-full"></div>

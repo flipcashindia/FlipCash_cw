@@ -289,7 +289,7 @@ const SellOldDevice: React.FC = () => {
                     <CachedImage
                       src={category.icon_url}
                       alt={category.title}
-                      className="w-16 h-16 mb-4 object-contain group-hover:scale-110 transition-transform duration-300"
+                      className="mb-4 object-contain group-hover:scale-110 transition-transform duration-300"
                       fallback={<Smartphone className="text-teal-400" size={32} />}
                     />
                     <h4 className="font-bold text-gray-800 mb-2 group-hover:text-teal-600 transition-colors">
@@ -373,11 +373,11 @@ const SellOldDevice: React.FC = () => {
                   transition={{ type: 'spring', stiffness: 400, damping: 10 }}
                   className="flex-shrink-0 w-60 bg-white rounded-2xl overflow-hidden shadow-xl cursor-pointer border-2 border-transparent hover:border-teal-500 group"
                 >
-                  <div className="relative bg-gradient-to-br from-teal-50 to-gray-50 p-6 h-48 flex items-center justify-center">
+                  <div className="relative bg-gradient-to-br from-teal-50 to-gray-50 p-3 h-48 flex items-center justify-center">
                     <CachedImage
                       src={(model as any).thumbnail}
                       alt={model.name}
-                      className="max-h-full max-w-full object-contain group-hover:scale-110 transition-transform duration-300"
+                      className="object-contain group-hover:scale-110 transition-transform duration-300"
                       fallback={<Smartphone className="text-teal-300" size={64} />}
                     />
                     <div className="absolute top-3 right-3 bg-teal-600 text-white px-2 py-1 rounded-full text-xs font-bold shadow-md">
