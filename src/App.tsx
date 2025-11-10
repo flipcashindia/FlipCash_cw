@@ -47,6 +47,7 @@ import FeedbackPage from './components/account/FeedbackPage';
 import KYCPage from './components/account/KYCPage';
 import LeadDetailPage from './components/pages/LeadDetailPage';
 import ScrollToTop from './api/utils/ScrollToTop';
+import ContactUsPage from './components/pages/ContactUsPage';
 
 // (Other page imports remain commented)
 
@@ -173,8 +174,7 @@ function AppRoutes() {
           <Route path="/my-account/feedback" element={<FeedbackPage {...accountProps} />} />
           <Route path="/my-account/kyc" element={<KYCPage {... accountProps } />} />
           <Route path="/my-account/bank" element={<MyAccountPage {...accountProps} />} />
-          
-          {/* --- ✅ ADDED NOT FOUND ROUTE --- */}
+          <Route path="/contact" element={<ContactUsPage />} />
           {/* This must be the LAST route in the list */}
           <Route path="*" element={<NotFoundPage />} />
           
