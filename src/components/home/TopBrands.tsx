@@ -16,7 +16,7 @@ const TopBrands: React.FC = () => {
   const loadTopBrands = async () => {
     try {
       const categories = await catalogService.getCategories();
-      console.log("top brand categories : ", categories);
+      // console.log("top brand categories : ", categories);
       
       if (categories.length > 0) {
         const phoneCat = categories.find(c => c.name.toLowerCase().includes('phone')) || categories[0];
