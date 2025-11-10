@@ -1,3 +1,4 @@
+// tailwind.config.js
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
@@ -5,8 +6,17 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    theme: {
     extend: {
+      // ADD THIS BLOCK
+      animation: {
+        'infinite-scroll': 'infinite-scroll 30s linear infinite',
+      },
+      keyframes: {
+        'infinite-scroll': {
+          from: { transform: 'translateX(0)' },
+          to: { transform: 'translateX(-50%)' },
+        }
+      },
       colors: {
         'brand': {
           // As per the branding guide [cite: 833, 834, 837, 838]
@@ -18,11 +28,11 @@ export default {
           'gray-light': '#F5F5F5',
           'aqua-tint': '#EAF6F4',
         }
-      }
+      },
+      // ... your other extensions
     },
   },
-  },
   plugins: [
-    require('@tailwindcss/forms'), // This will make our form inputs look great
+    require('tailwind-scrollbar-hide', '@tailwindcss/forms') // <-- ADD THIS LINE
   ],
 }

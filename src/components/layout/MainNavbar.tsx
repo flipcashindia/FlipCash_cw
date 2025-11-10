@@ -9,7 +9,7 @@ import { Search, User, Menu, X, Wallet, MapPin, ShoppingBag, BookOpen, LogOut, S
 import { useAuth } from '../../context/AuthContext';
 import AuthModal from '../auth/AuthModal';
 import SearchModal from '../search/SearchModal';
-import logo from '../../assets/logo.png';
+import logo from '../../../public/flipcash_header_logo.jpeg';
 
 interface MainNavbarProps {
   isLoggedIn?: boolean;
