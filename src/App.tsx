@@ -11,7 +11,7 @@ import MainNavbar from './components/layout/MainNavbar';
 import Footer from './components/layout/Footer';
 
 // Home
-import HeroBanner from './components/home/HeroBanner';
+import HeroBanner from './components/home/HeroBanner2';
 import CustomerReviews from './components/home/CustomerReviews';
 import TopBrands from './components/home/TopBrands';
 import BlogSlider from './components/home/BlogSlider';
