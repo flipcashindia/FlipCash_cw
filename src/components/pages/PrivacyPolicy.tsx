@@ -1,7 +1,7 @@
 // src/pages/PrivacyPolicy.tsx
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, Lock, Eye, Database, Users, Bell, Cookie, FileText, Scale, Mail, Phone, MapPin } from 'lucide-react';
+import { Shield, Lock, Eye, Database, Users, Bell, Cookie, Scale, Mail, Phone, MapPin } from 'lucide-react';
 import flipcashLogo from '../../../public/flipcash_header_logo.png';
 
 const PrivacyPolicy: React.FC = () => {

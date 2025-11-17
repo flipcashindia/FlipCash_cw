@@ -66,10 +66,10 @@ interface TimeSlot {
   value: string; // "morning"
   label: string; // "Morning (9AM - 1PM)"
 }
-interface DateOption {
-  value: string; // "2025-11-17" (YYYY-MM-DD format)
-  label: string; // "Tomorrow - Monday, 17 Nov 2025"
-}
+// interface DateOption {
+//   value: string; // "2025-11-17" (YYYY-MM-DD format)
+//   label: string; // "Tomorrow - Monday, 17 Nov 2025"
+// }
 interface ModelData {
   id: string;
   name: string;

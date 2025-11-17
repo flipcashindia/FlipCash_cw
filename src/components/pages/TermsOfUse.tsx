@@ -1,7 +1,7 @@
 // src/pages/TermsOfUse.tsx
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Shield, Users, Smartphone, CreditCard, Lock, Scale, Bell, Mail, Phone, MapPin } from 'lucide-react';
+import { FileText, Users, Smartphone, CreditCard, Lock, Scale, Mail, Phone, MapPin } from 'lucide-react';
 import flipcashLogo from '../../../public/flipcash_header_logo.png';
 
 const TermsOfUse: React.FC = () => {
