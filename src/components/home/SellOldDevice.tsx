@@ -353,10 +353,10 @@ const SellOldDevice: React.FC = () => {
                 <TrendingUp className="text-teal-600" size={24} />
                 <span>Trending Devices</span>
               </h3>
-              <button className="text-teal-600 hover:text-teal-700 font-medium flex items-center gap-1 transition-colors">
+              {/* <button className="text-teal-600 hover:text-teal-700 font-medium flex items-center gap-1 transition-colors">
                 View All
                 <ChevronRight size={18} />
-              </button>
+              </button> */}
             </div>
             
             {/* Horizontal Scrolling Container */}

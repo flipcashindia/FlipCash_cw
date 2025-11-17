@@ -28,7 +28,7 @@ export const getCategories = async (): Promise<Category[]> => {
   
   const data = response.data.results || response.data;
   
-  console.log('categories data : ', data);
+  // console.log('categories data : ', data);
 
   setCachedData(cacheKey, data, CACHE_DURATION);
   return data;
@@ -42,7 +42,7 @@ export const getCategory = async (id: string): Promise<Category> => {
 
   const response = await apiClient.get(`${CATALOG_BASE}/categories/${id}/`);
   setCachedData(cacheKey, response.data, CACHE_DURATION);
-  console.log('categories id data : ', response.data);
+  // console.log('categories id data : ', response.data);
 
   return response.data;
 };
@@ -63,7 +63,7 @@ export const getBrandsByCategory = async (categoryId: string): Promise<Brand[]> 
   const data = response.data.results || response.data;
   
   setCachedData(cacheKey, data, CACHE_DURATION);
-  console.log('brands by categories data : ', data);
+  // console.log('brands by categories data : ', data);
 
   return data;
 };
@@ -78,7 +78,7 @@ export const getAllBrands = async (): Promise<Brand[]> => {
   const data = response.data.results || response.data;
   
   setCachedData(cacheKey, data, CACHE_DURATION);
-  console.log('brand all data : ', data);
+  // console.log('brand all data : ', data);
 
   return data;
 };
@@ -91,7 +91,7 @@ export const getBrand = async (id: string): Promise<Brand> => {
 
   const response = await apiClient.get(`${CATALOG_BASE}/brands/${id}/`);
   setCachedData(cacheKey, response.data, CACHE_DURATION);
-  console.log('brand id  data : ', response.data);
+  // console.log('brand id  data : ', response.data);
 
   return response.data;
 };
@@ -112,7 +112,7 @@ export const getModelsByBrand = async (brandId: string): Promise<Model[]> => {
   const data = response.data.results || response.data;
   
   setCachedData(cacheKey, data, CACHE_DURATION);
-  console.log('models by brand data : ', data);
+  // console.log('models by brand data : ', data);
 
   return data;
 };
@@ -126,7 +126,7 @@ export const getModelsByBrandAndCategory = async (brandId: string, categoryId: s
   const response = await apiClient.get(`${CATALOG_BASE}/models/`, {
     params: { brand: brandId, category: categoryId },
   });
-  console.log('Models data : ', response);
+  // console.log('Models data : ', response);
   
   const data = response.data.results || response.data;
   
@@ -146,7 +146,7 @@ export const getFeaturedModels = async (): Promise<Model[]> => {
   const data = response.data.results || response.data;
   
   setCachedData(cacheKey, data, CACHE_DURATION);
-  console.log('models featured data : ', data);
+  // console.log('models featured data : ', data);
 
   return data;
 };
@@ -159,7 +159,7 @@ export const getModel = async (id: string): Promise<Model> => {
 
   const response = await apiClient.get(`${CATALOG_BASE}/models/${id}/`);
   setCachedData(cacheKey, response.data, CACHE_DURATION);
-  console.log('catalog model with id  data : ', response.data);
+  // console.log('catalog model with id  data : ', response.data);
 
   return response.data;
 };
@@ -174,7 +174,7 @@ export const getModelVariants = async (modelId: string): Promise<DeviceVariant[]
   const data = response.data.results || response.data;
   
   setCachedData(cacheKey, data, CACHE_DURATION);
-  console.log('modal variant data : ', data);
+  // console.log('modal variant data : ', data);
 
   return data;
 };
@@ -189,7 +189,7 @@ export const getModelImages = async (modelId: string): Promise<DeviceImage[]> =>
   const data = response.data.results || response.data;
   
   setCachedData(cacheKey, data, CACHE_DURATION);
-  console.log('catalog model image data : ', data);
+  // console.log('catalog model image data : ', data);
 
   return data;
 };
@@ -227,3 +227,13 @@ export const getEstimateDetail = async (estimateId: string): Promise<PriceEstima
   const response = await apiClient.get(`${PRICING_BASE}/estimate-detail/${estimateId}/`);
   return response.data;
 };
+
+
+
+
+
+
+
+
+
+

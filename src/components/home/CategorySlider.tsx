@@ -66,7 +66,7 @@ const CategorySlider: React.FC = () => {
 
     if (loading) {
         return (
-            <section className="py-12 md:py-16 bg-gray-50">
+            <section className="lg:hidden py-12 md:py-16 bg-gray-50">
                 <div className="container mx-auto px-4">
                     {/* A simple skeleton loader */}
                     <h2 className="text-3xl font-bold text-center mb-8">Sell Your Device</h2>

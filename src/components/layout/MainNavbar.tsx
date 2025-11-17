@@ -9,7 +9,7 @@ import { Search, User, Menu, X, Wallet, MapPin, ShoppingBag, BookOpen, LogOut, S
 import { useAuth } from '../../context/AuthContext';
 import AuthModal from '../auth/AuthModal';
 import SearchModal from '../search/SearchModal';
-import logo from '../../../public/flipcash_header_logo.jpeg';
+import logo from '../../../public/flipcash_header_logo.png';
 
 interface MainNavbarProps {
   isLoggedIn?: boolean;
@@ -71,7 +71,7 @@ const MainNavbar: React.FC<MainNavbarProps> = () => {
 
   return (
     <>
-      <nav className="bg-[#ffe208] shadow-md sticky top-0 z-40 border-b-2 border-20">
+      <nav className="bg-[#FEC925] shadow-md sticky top-0 z-40 border-b-2 border-20">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             {/* Logo */}
@@ -327,7 +327,7 @@ const MainNavbar: React.FC<MainNavbarProps> = () => {
                   </Link>
                   
                   <Link 
-                    to="/my-addresses" 
+                    to="/my-account/my-addresses" 
                     onClick={() => setShowMobileMenu(false)}
                     className="flex items-center gap-3 py-3 px-4 text-[#1C1C1B] hover:bg-[#F0F7F6] rounded-lg transition-colors"
                   >

@@ -21,6 +21,7 @@ const TopBrands: React.FC = () => {
       if (categories.length > 0) {
         const phoneCat = categories.find(c => c.name.toLowerCase().includes('phone')) || categories[0];
         const data = await catalogService.getBrandsByCategory(phoneCat.id);
+        console.log('search data : ', data);
         
         setBrands(data.filter(b => b.is_featured).slice(0, 8));
       }
