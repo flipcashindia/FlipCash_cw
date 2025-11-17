@@ -155,7 +155,20 @@ const ReviewCard: React.FC<{ review: Review }> = ({ review }) => (
   <div className="flex flex-col justify-between h-full bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
     <div>
       <div className="flex items-center gap-2 mb-3">
-        <h3 className="font-semibold text-gray-900">{review.customerName}</h3>
+        {/* <div className="px-4 py-4 bg-gradient-to-r from-[#F0F7F6] to-[#EAF6F4] border-b-2 border-[#FEC925]/20"> */}
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-gradient-to-r from-[#FEC925] to-[#1B8A05] rounded-full flex items-center justify-center text-[#1C1C1B] font-bold text-xl">
+              {review.customerName ? review.customerName[0].toUpperCase() : review.customerName[0] || 'U'}
+            </div>
+            <div>
+              <p className="font-bold text-[#1C1C1B]">
+                {review.customerName || 'User'}
+              </p>
+            </div>
+          </div>
+        {/* </div> */}
+        <div></div>
+        {/* <h3 className="font-semibold text-gray-900">{review.customerName}</h3> */}
         {review.isVerified && (
           <span className="flex items-center gap-1 text-sm text-green-600">
             <CheckCircle size={14} /> Verified Buyer
@@ -169,16 +182,16 @@ const ReviewCard: React.FC<{ review: Review }> = ({ review }) => (
     </div>
     <div className="border-t border-gray-200 mt-6 pt-4">
       <div className="flex items-center gap-4">
-        <img
+        {/* <img
           src={review.product.image}
           alt={review.product.name}
           className="w-14 h-14 rounded-lg bg-gray-50 object-contain"
-        />
+        /> */}
         <div>
           <p className="text-md font-medium text-gray-800">
-            Item purchased: {review.product.name}
+            Item purchased:<span className="font-bold"> {review.product.name} </span>
           </p>
-          <p className="text-xl font-bold text-red-600 mt-1">
+          <p className="text-xl font-bold text-green-600 mt-1">
             {review.product.price}
           </p>
         </div>

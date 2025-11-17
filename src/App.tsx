@@ -14,10 +14,10 @@ import Footer from './components/layout/Footer';
 // Home
 import HeroBanner from './components/home/HeroBanner2';
 import CustomerReviews from './components/home/CustomerReviews';
-import TopBrands from './components/home/TopBrands';
+// import TopBrands from './components/home/TopBrands';
 import BlogSlider from './components/home/BlogSlider';
 import BlogSection from './components/home/BlogSection';
-import FAQSection from './components/home/FAQSection';
+// import FAQSection from './components/home/FAQSection';
 import DownloadAppBanner from './components/home/DownloadAppBanner';
 import AboutSection from './components/home/AboutSection';
 import CategorySlider from './components/home/CategorySlider';
@@ -43,6 +43,11 @@ import KYCPage from './components/account/KYCPage';
 import LeadDetailPage from './components/pages/LeadDetailPage';
 import ScrollToTop from './api/utils/ScrollToTop';
 import ContactUsPage from './components/pages/ContactUsPage';
+import TermsAndConditions from './components/pages/TermsAndConditions';
+import PrivacyPolicy from './components/pages/PrivacyPolicy';
+import RefundPolicy from './components/pages/RefundPolicy';
+import FAQ from './components/home/FAQSection';
+import TermsOfUse from './components/pages/TermsOfUse';
 
 function Home() {
   return (
@@ -52,9 +57,9 @@ function Home() {
       <SellOldDevice />
       <DownloadAppBanner />
       <CustomerReviews />
-      <TopBrands />
+      {/* <TopBrands /> */}
       <BlogSlider />
-      <FAQSection />
+      <FAQ />
     </main>
   );
 }
@@ -129,29 +134,41 @@ function AppRoutes() {
       <MainNavbar isLoggedIn={false} onAccountClick={() => navigate('/my-account')} />
       
       <div className="pt-[0px]">
-        <Routes>
+          <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/blog" element={<BlogSection />} />
-          <Route path="/faq" element={<FAQSection />} />
+          {/* <Route path="/blog/:id" element={<BlogDetailPage />} /> */}
+          <Route path="/faq" element={<FAQ />} />
           <Route path="/about" element={<AboutSection />} />
+          <Route path="/terms" element={<TermsAndConditions />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/refund-policy" element={<RefundPolicy />} />
+          <Route path="/terms-of-use" element={<TermsOfUse />} />
           <Route path="/sell-old-product" element={<SellOldDevice />} />
           <Route path="/select-brand" element={<ChooseBrand />} />
           <Route path="/select-model" element={<SelectModel />} />
+          
+          {/* (Other page routes remain commented) */}
+
           <Route path="/device-stepper" element={<DeviceStepper />} />
+          
+          {/* (Sell flow routes remain commented) */}
+
           <Route path="/lead/:leadId" element={<LeadDetailPage />} />
+          
           <Route path="/my-account" element={<MyAccountPage {...accountProps} />} />
-          <Route path="/my-orders" element={<MyOrderPage {...accountProps} />} />
-          <Route path="/my-wallet" element={<MyWalletPage {...accountProps} />} />
-          <Route path="/passbook" element={<PassbookPage {...accountProps} />} />
-          <Route path="/addresses" element={<MyAddressesPage {...accountProps} />} />
-          <Route path="/account-details" element={<AccountDetailsPage {...accountProps} />} />
-          <Route path="/helpdesk" element={<HelpdeskPage {...accountProps} />} />
+          <Route path="/my-account/my-orders" element={<MyOrderPage {...accountProps} />} />
+          <Route path="/my-account/my-wallet" element={<MyWalletPage {...accountProps} />} />
+          <Route path="/my-account/passbook" element={<PassbookPage {...accountProps} />} />
+          <Route path="/my-account/addresses" element={<MyAddressesPage {...accountProps} />} />
+          <Route path="/my-account/account-details" element={<AccountDetailsPage {...accountProps} />} />
+          <Route path="/my-account/helpdesk" element={<HelpdeskPage {...accountProps} />} />
           <Route path="/my-account/raise-dispute" element={<RaiseDisputePage {...accountProps} />} />
           <Route path="/my-account/feedback" element={<FeedbackPage {...accountProps} />} />
-          <Route path="/my-account/kyc" element={<KYCPage {...accountProps} />} />
+          <Route path="/my-account/kyc" element={<KYCPage {... accountProps } />} />
           <Route path="/my-account/bank" element={<MyAccountPage {...accountProps} />} />
           <Route path="/contact" element={<ContactUsPage />} />
-          {/* This must be the LAST route */}
+          {/* This must be the LAST route in the list */}
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </div>

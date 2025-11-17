@@ -216,7 +216,7 @@ const MainNavbar: React.FC<MainNavbarProps> = () => {
                           <div className="p-2 bg-[#F0F7F6] rounded-lg group-hover:bg-white transition-colors">
                             <Settings size={18} className="text-[#1B8A05]" />
                           </div>
-                          <span className="font-medium">Settings</span>
+                          <span className="font-medium">Profile Edit</span>
                         </button>
 
                         <button
