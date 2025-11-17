@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import {
   ArrowLeft,
   ArrowRight,
-  Upload,
   CheckCircle,
   MapPin,
   Calendar,
@@ -13,9 +12,14 @@ import {
   Wallet,
   AlertTriangle,
   X,
-  Camera,
+  ChevronDown,
+  ChevronUp,
+  Info,
+  Plus,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import * as authService from '../../api/services/authService';
+import type { CreateAddressRequest } from '../../api/types/auth.types';
 
 // API Configuration
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -61,6 +65,10 @@ interface UserAddress {
 interface TimeSlot {
   value: string; // "morning"
   label: string; // "Morning (9AM - 1PM)"
+}
+interface DateOption {
+  value: string; // "2025-11-17" (YYYY-MM-DD format)
+  label: string; // "Tomorrow - Monday, 17 Nov 2025"
 }
 interface ModelData {
   id: string;
@@ -120,16 +128,33 @@ const DeviceStepper: React.FC = () => {
 
   const [groupedAttributes, setGroupedAttributes] = useState<Record<string, DeviceAttribute[]>>({});
   const [conditionResponses, setConditionResponses] = useState<Record<string, any>>({});
+  
+  // ✅ NEW: State for tracking which optional sections are expanded
+  const [expandedOptionalSections, setExpandedOptionalSections] = useState<Record<string, boolean>>({});
 
   const [imei, setImei] = useState('');
   const [estimate, setEstimate] = useState<EstimateResponse | null>(null);
 
-  const [photos, setPhotos] = useState<File[]>([]);
+  // ✅ REMOVED: Photo state (Step 6 removed)
+  // const [photos, setPhotos] = useState<File[]>([]);
+  
   const [addresses, setAddresses] = useState<UserAddress[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState('');
   const [preferredDate, setPreferredDate] = useState('');
   const [timeSlot, setTimeSlot] = useState('');
   const [specialInstructions, setSpecialInstructions] = useState('');
+
+  // ✅ NEW: Address form state
+  const [showAddressForm, setShowAddressForm] = useState(false);
+  const [addressFormData, setAddressFormData] = useState<CreateAddressRequest>({
+    type: 'home',
+    line1: '',
+    line2: '',
+    city: '',
+    state: '',
+    postal_code: '',
+    is_default: false,
+  });
 
   const timeSlots: TimeSlot[] = [
     { value: 'morning', label: 'Morning (9AM - 1PM)' },
@@ -141,14 +166,11 @@ const DeviceStepper: React.FC = () => {
     if (modelId) {
       loadStepperData(modelId);
     } else {
-      // ✅ CHANGE: Don't automatically redirect. Just show an error.
-      // The user may have reached this via a bad URL.
       setError('Error: Device model ID is missing. Please select a device to begin.');
       setLoading(false);
     }
   }, [modelId]);
 
-  // --- MODIFIED FUNCTION ---
   const loadStepperData = async (id: string) => {
     try {
       setLoading(true);
@@ -171,7 +193,7 @@ const DeviceStepper: React.FC = () => {
       const modelData: ModelData = await modelRes.json();
       const attrsData: DeviceAttribute[] = await attrsRes.json();
 
-      // --- START: MODIFICATION (Applying defaults if API fields are empty) ---
+      // Applying defaults if API fields are empty
       const defaultStorage = ['64 GB', '128GB', '256GB', '512GB'];
       const defaultRAM = ['4GB', '6GB', '8GB', '12GB'];
       const defaultColors = ['Black', 'White', 'Silver', 'Gold', 'Blue', 'Red', 'Green', 'Purple', 'Graphite'];
@@ -189,8 +211,7 @@ const DeviceStepper: React.FC = () => {
           : defaultColors,
       };
 
-      setModelDetails(processedModelDetails); // Set the processed data
-      // --- END: MODIFICATION ---
+      setModelDetails(processedModelDetails);
 
       const sorted = attrsData.sort((a, b) => a.display_order - b.display_order);
       const groups = sorted.reduce((acc: Record<string, DeviceAttribute[]>, attr) => {
@@ -208,8 +229,6 @@ const DeviceStepper: React.FC = () => {
       setLoading(false);
     }
   };
-  // --- END: MODIFIED FUNCTION ---
-
 
   const loadAddresses = async () => {
     try {
@@ -224,7 +243,6 @@ const DeviceStepper: React.FC = () => {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.detail || `Failed to load addresses (${res.status})`);
       }
-      // Assuming API returns results array directly for now
       const data: UserAddress[] = await res.json();
       setAddresses(data);
       const defaultAddr = data.find((a) => a.is_default);
@@ -240,8 +258,53 @@ const DeviceStepper: React.FC = () => {
     }
   };
 
+  // ✅ NEW: Handle address creation
+  const handleCreateAddress = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setLoading(true);
+      setError(null);
+      
+      await authService.createAddress(addressFormData);
+      
+      // Reload addresses
+      await loadAddresses();
+      
+      // Reset form and hide it
+      setShowAddressForm(false);
+      resetAddressForm();
+      
+    } catch (error: any) {
+      console.error('Failed to create address:', error);
+      setError(error.message || 'Failed to create address');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ✅ NEW: Reset address form
+  const resetAddressForm = () => {
+    setAddressFormData({
+      type: 'home',
+      line1: '',
+      line2: '',
+      city: '',
+      state: '',
+      postal_code: '',
+      is_default: false,
+    });
+  };
+
   const handleResponseChange = (name: string, value: any) => {
     setConditionResponses(prev => ({ ...prev, [name]: value }));
+  };
+
+  // ✅ NEW: Toggle optional section visibility
+  const toggleOptionalSection = (groupName: string) => {
+    setExpandedOptionalSections(prev => ({
+      ...prev,
+      [groupName]: !prev[groupName]
+    }));
   };
 
   // --- Stepper Navigation ---
@@ -250,13 +313,11 @@ const DeviceStepper: React.FC = () => {
 
     // Step 1 (Variant) -> Step 2 (Condition)
     if (step === 1) {
-      // ✅ FIX: Use simple guard clause and direct access instead of optional chaining
       if (!modelDetails) {
         setError('Device details are still loading. Please wait a moment.');
         return;
       }
       
-      // ✅ FIX: Removed unnecessary optional chaining from the build errors
       if (modelDetails.storage_options.length > 0 && !conditionResponses['storage']) {
         setError('Please select a storage option.');
         return;
@@ -286,12 +347,13 @@ const DeviceStepper: React.FC = () => {
       setStep(3);
     }
 
-    // Step 3 (IMEI) -> Step 4 (Estimate)
+    // ✅ MODIFIED: Step 3 (IMEI - Now Skippable) -> Step 4 (Estimate)
+    // No validation required - user can skip IMEI entry
     else if (step === 3) {
       await handleGetEstimate();
     }
 
-    // Step 4 (Estimate) -> Step 5 (Pickup)
+    // Step 4 (Estimate) -> Step 5 (Pickup - FINAL STEP)
     else if (step === 4) {
       const addressesLoaded = await loadAddresses();
       if (addressesLoaded) {
@@ -299,7 +361,7 @@ const DeviceStepper: React.FC = () => {
       }
     }
 
-    // Step 5 (Pickup) -> Step 6 (Photos)
+    // ✅ MODIFIED: Step 5 (Pickup - FINAL STEP) -> Create Lead & Navigate
     else if (step === 5) {
       if (!selectedAddressId) {
         setError('Please select a pickup address');
@@ -313,17 +375,11 @@ const DeviceStepper: React.FC = () => {
         setError('Please select a time slot');
         return;
       }
-      setStep(6); // Move to final photo step
+      // ✅ CHANGED: Now create lead without photos
+      await handleCreateLead();
     }
 
-    // Step 6 (Photos) -> (Create Lead, Upload Photos, & Navigate)
-    else if (step === 6) {
-      if (photos.length < 2) {
-        setError('Please upload at least 2 photos (Front & Back)');
-        return;
-      }
-      await handleCreateLeadAndUploadPhotos();
-    }
+    // ✅ REMOVED: Step 6 (Photos) logic entirely
   };
 
   const handleBack = () => {
@@ -361,7 +417,7 @@ const DeviceStepper: React.FC = () => {
         ram: ram,
         color: color,
         condition_inputs: allResponses,
-        imei: imei || '',
+        imei: imei || '', // ✅ IMEI is optional now
       };
 
       const estimateRes = await fetch(`${API_BASE_URL}/pricing/estimate/`, {
@@ -401,30 +457,30 @@ const DeviceStepper: React.FC = () => {
     }
   };
 
-  // --- Step 6 Action: Create Lead, Upload Photos, & NAVIGATE ---
-  const handleCreateLeadAndUploadPhotos = async () => {
+  // ✅ MODIFIED: Step 5 (Final) Action: Create Lead & NAVIGATE (No Photos)
+  const handleCreateLead = async () => {
     const token = localStorage.getItem('access_token');
     if (!token || !estimate) {
       setError("An error occurred. Please go back and try again.");
       return;
     }
 
-    let newLeadId = ''; // To store the ID of the created lead
+    let newLeadId = '';
 
     try {
       setLoading(true);
       setError(null);
 
-      // --- 1. Create Lead (using LeadCreateSerializer fields) ---
+      // Create Lead (using LeadCreateSerializer fields)
       const leadPayload = {
         estimate_id: estimate.estimate_id,
         pickup_address_id: selectedAddressId,
         preferred_date: preferredDate,
-        time_slot: timeSlots.find(s => s.value === timeSlot)?.label || timeSlot, // Send the label
+        time_slot: timeSlots.find(s => s.value === timeSlot)?.label || timeSlot,
         special_instructions: specialInstructions,
       };
 
-      const leadRes = await fetch(`${API_BASE_URL}/leads/leads/`, { //
+      const leadRes = await fetch(`${API_BASE_URL}/leads/leads/`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -448,33 +504,17 @@ const DeviceStepper: React.FC = () => {
       }
 
       const leadData: LeadResponse = await leadRes.json();
-      newLeadId = leadData.id; // Get the new Lead's ID
+      newLeadId = leadData.id;
 
-      // --- 2. Upload Photos (using the new leadId) ---
-      for (const photo of photos) {
-        const formData = new FormData();
-        formData.append('photo', photo);
-        formData.append('description', 'Device Photo');
+      // ✅ REMOVED: Photo upload logic
 
-        const uploadRes = await fetch(`${API_BASE_URL}/leads/leads/${newLeadId}/upload_photo/`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}` },
-          body: formData
-        });
-
-        if (!uploadRes.ok) {
-          // Log photo error but continue
-          console.error(`Failed to upload photo: ${photo.name}`);
-        }
-      }
-
-      // --- 3. SUCCESS: NAVIGATE TO LEAD DETAIL PAGE ---
+      // SUCCESS: NAVIGATE TO LEAD DETAIL PAGE
       navigate(`/lead/${newLeadId}`);
 
     } catch (error: any) {
-      console.error('Failed to create lead or upload photos:', error);
+      console.error('Failed to create lead:', error);
       setError(error.message || 'Failed to create your lead.');
-      // If lead was created but photos failed, still navigate
+      // If lead was created, still navigate
       if (newLeadId) {
         navigate(`/lead/${newLeadId}`);
       }
@@ -483,28 +523,45 @@ const DeviceStepper: React.FC = () => {
     }
   };
 
-  // --- (Photo/Date Handlers) ---
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (photos.length + files.length > 6) {
-      setError('Maximum 6 photos allowed');
-      return;
+  // ✅ REMOVED: Photo handlers
+  // const handlePhotoUpload = ...
+  // const removePhoto = ...
+  
+  // ✅ NEW: Generate next 4 days for pickup date selection
+  const getNext4Days = () => {
+    const days = [];
+    const today = new Date();
+    
+    for (let i = 1; i <= 4; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      
+      const value = date.toISOString().split('T')[0]; // YYYY-MM-DD format for backend
+      
+      // Format for display
+      const dayName = date.toLocaleDateString('en-IN', { weekday: 'long' });
+      const dateStr = date.toLocaleDateString('en-IN', { 
+        day: 'numeric', 
+        month: 'short', 
+        year: 'numeric' 
+      });
+      
+      let label = '';
+      if (i === 1) {
+        label = `Tomorrow - ${dayName}, ${dateStr}`;
+      } else if (i === 2) {
+        label = `Day After Tomorrow - ${dayName}, ${dateStr}`;
+      } else {
+        label = `${dayName}, ${dateStr}`;
+      }
+      
+      days.push({ value, label });
     }
-    setPhotos([...photos, ...files]);
+    
+    return days;
   };
-  const removePhoto = (index: number) => {
-    setPhotos(photos.filter((_, i) => i !== index));
-  };
-  const getMinDate = () => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    return tomorrow.toISOString().split('T')[0];
-  };
-  const getMaxDate = () => {
-    const maxDate = new Date();
-    maxDate.setDate(maxDate.getDate() + 30);
-    return maxDate.toISOString().split('T')[0];
-  };
+  
+  const availableDates = getNext4Days();
 
   // --- (Loading Render) ---
   const renderLoading = () => (
@@ -519,14 +576,13 @@ const DeviceStepper: React.FC = () => {
   // --- (renderAttributeInput) ---
   const renderAttributeInput = (attr: DeviceAttribute) => {
     if (attr.is_boolean) {
-      // This now saves "true" and "false" as STRINGS
       return (
         <div className="grid grid-cols-2 gap-3">
           <button
             type="button"
             onClick={() => handleResponseChange(attr.name, "true")}
             className={`p-4 border-2 rounded-xl font-medium transition-all ${
-              conditionResponses[attr.name] === "true" // Check for string
+              conditionResponses[attr.name] === "true"
                 ? 'bg-[#1B8A05]/10 border-[#1B8A05] ring-2 ring-[#1B8A05]/50'
                 : 'border-gray-300 hover:border-[#FEC925]'
             }`}
@@ -537,7 +593,7 @@ const DeviceStepper: React.FC = () => {
             type="button"
             onClick={() => handleResponseChange(attr.name, "false")}
             className={`p-4 border-2 rounded-xl font-medium transition-all ${
-              conditionResponses[attr.name] === "false" // Check for string
+              conditionResponses[attr.name] === "false"
                 ? 'bg-[#FF0000]/10 border-[#FF0000] ring-2 ring-[#FF0000]/50'
                 : 'border-gray-300 hover:border-[#FEC925]'
             }`}
@@ -547,7 +603,6 @@ const DeviceStepper: React.FC = () => {
         </div>
       );
     } else {
-      // This part is for 'select'
       return (
         <div className="grid grid-cols-2 gap-3">
           {attr.options.map((option) => (
@@ -571,7 +626,6 @@ const DeviceStepper: React.FC = () => {
 
   // --- (renderVariantOptions) ---
   const renderVariantOptions = (title: string, fieldName: 'storage' | 'ram' | 'color', options: string[]) => {
-    // Check if options is defined and has elements
     if (!options || options.length === 0) return null;
     return (
       <fieldset className="space-y-4">
@@ -599,6 +653,94 @@ const DeviceStepper: React.FC = () => {
     );
   };
 
+  // ✅ NEW: Render attribute groups with required/optional separation
+  const renderAttributeGroup = (groupName: string, attrs: DeviceAttribute[]) => {
+    const requiredAttrs = attrs.filter(a => a.is_required);
+    const optionalAttrs = attrs.filter(a => !a.is_required);
+    const isExpanded = expandedOptionalSections[groupName] || false;
+
+    return (
+      <fieldset key={groupName} className="space-y-6">
+        <legend className="text-2xl font-bold text-[#1C1C1B] pb-2 border-b-2 border-[#FEC925]">
+          {groupName}
+        </legend>
+        
+        {/* Required Attributes */}
+        {requiredAttrs.map((attr) => (
+          <div key={attr.id} className="border-b border-gray-100 pb-6">
+            <label className="block font-semibold text-lg text-[#1C1C1B] mb-3">
+              {attr.question_text}
+              <span className="text-[#FF0000]"> *</span>
+              {attr.help_text && (
+                <span className="group relative ml-2">
+                  <HelpCircle size={16} className="text-gray-400 cursor-help inline" />
+                  <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 p-2 bg-[#1C1C1B] text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                    {attr.help_text}
+                  </span>
+                </span>
+              )}
+            </label>
+            {renderAttributeInput(attr)}
+          </div>
+        ))}
+
+        {/* Optional Attributes - Collapsible Section */}
+        {optionalAttrs.length > 0 && (
+          <div className="mt-4">
+            <button
+              type="button"
+              onClick={() => toggleOptionalSection(groupName)}
+              className="w-full flex items-center justify-between p-4 bg-[#FEC925]/10 border-2 border-[#FEC925]/30 rounded-xl hover:bg-[#FEC925]/20 transition-all"
+            >
+              <div className="flex items-center gap-3">
+                <Info size={20} className="text-[#FEC925]" />
+                <span className="font-semibold text-[#1C1C1B]">
+                  Optional Details ({optionalAttrs.length})
+                </span>
+                <span className="text-sm text-gray-600 italic">
+                  Fill for more accurate pricing
+                </span>
+              </div>
+              {isExpanded ? (
+                <ChevronUp size={20} className="text-[#1C1C1B]" />
+              ) : (
+                <ChevronDown size={20} className="text-[#1C1C1B]" />
+              )}
+            </button>
+
+            <AnimatePresence>
+              {isExpanded && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="mt-4 space-y-6 pl-4 border-l-4 border-[#FEC925]/30"
+                >
+                  {optionalAttrs.map((attr) => (
+                    <div key={attr.id} className="border-b border-gray-100 pb-6">
+                      <label className="block font-semibold text-lg text-[#1C1C1B] mb-3">
+                        {attr.question_text}
+                        {attr.help_text && (
+                          <span className="group relative ml-2">
+                            <HelpCircle size={16} className="text-gray-400 cursor-help inline" />
+                            <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 p-2 bg-[#1C1C1B] text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                              {attr.help_text}
+                            </span>
+                          </span>
+                        )}
+                      </label>
+                      {renderAttributeInput(attr)}
+                    </div>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
+      </fieldset>
+    );
+  };
 
   if (loading && step === 1) {
     return renderLoading();
@@ -608,9 +750,10 @@ const DeviceStepper: React.FC = () => {
     <section className="min-h-screen bg-gradient-to-br from-[#F0F7F6] via-white to-[#EAF6F4] py-8 md:py-12">
       <div className="container mx-auto px-4 max-w-4xl">
 
+        {/* ✅ UPDATED: Progress bar now shows 5 steps instead of 6 */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
-            {['Variant', 'Condition', 'IMEI', 'Estimate', 'Pickup', 'Photos'].map((label, idx) => (
+            {['Variant', 'Condition', 'IMEI', 'Estimate', 'Pickup'].map((label, idx) => (
               <div key={idx} className="flex-1 text-center last:flex-initial">
                 <div className={`w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center font-bold text-lg ${
                   step > idx + 1 ? 'bg-[#1B8A05] text-white' :
@@ -628,7 +771,7 @@ const DeviceStepper: React.FC = () => {
             <motion.div
               className="h-full bg-gradient-to-r from-[#FEC925] to-[#1B8A05] rounded-full"
               initial={{ width: 0 }}
-              animate={{ width: `${((step - 1) / 5) * 100}%` }}
+              animate={{ width: `${((step - 1) / 4) * 100}%` }}
               transition={{ type: 'spring' }}
             />
           </div>
@@ -664,54 +807,63 @@ const DeviceStepper: React.FC = () => {
                       className="max-h-full max-w-full object-contain"
                     />
                   </div>
-                  {/* These functions will now render the defaults if the original options were empty */}
                   {renderVariantOptions('Storage', 'storage', modelDetails.storage_options)}
                   {renderVariantOptions('RAM', 'ram', modelDetails.ram_options)}
                   {renderVariantOptions('Color', 'color', modelDetails.color_options)}
                 </motion.div>
               )}
 
-              {/* --- Step 2: Device Condition --- */}
+              {/* --- Step 2: Device Condition (WITH COLLAPSIBLE OPTIONAL SECTIONS) --- */}
               {step === 2 && (
                 <motion.div key="step2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-8">
                   <div className="text-center">
                     <h2 className="text-3xl font-bold text-[#1C1C1B] mb-2">Tell us its condition</h2>
                     <p className="text-lg text-gray-600">{modelDetails?.name}</p>
                   </div>
-                  {Object.entries(groupedAttributes).map(([groupName, attrs]) => (
-                    <fieldset key={groupName} className="space-y-6">
-                      <legend className="text-2xl font-bold text-[#1C1C1B] pb-2 border-b-2 border-[#FEC925]">{groupName}</legend>
-                      {attrs.map((attr) => (
-                        <div key={attr.id} className="border-b border-gray-100 pb-6">
-                          <label className="block font-semibold text-lg text-[#1C1C1B] mb-3">
-                            {attr.question_text}
-                            {attr.is_required && <span className="text-[#FF0000]"> *</span>}
-                            {attr.help_text && (
-                              <span className="group relative ml-2">
-                                <HelpCircle size={16} className="text-gray-400 cursor-help" />
-                                <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 p-2 bg-[#1C1C1B] text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                                  {attr.help_text}
-                                </span>
-                              </span>
-                            )}
-                          </label>
-                          {renderAttributeInput(attr)}
-                        </div>
-                      ))}
-                    </fieldset>
-                  ))}
+                  {/* ✅ UPDATED: Use new render function that separates required/optional */}
+                  {Object.entries(groupedAttributes).map(([groupName, attrs]) => 
+                    renderAttributeGroup(groupName, attrs)
+                  )}
                 </motion.div>
               )}
 
-              {/* --- Step 3: IMEI (Skippable) --- */}
+              {/* --- Step 3: IMEI (SKIPPABLE - No validation) --- */}
               {step === 3 && (
                 <motion.div key="step3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6">
-                  <h2 className="text-3xl font-bold text-[#1C1C1B] text-center">Device IMEI (Optional)</h2>
+                  <div className="text-center">
+                    <h2 className="text-3xl font-bold text-[#1C1C1B] mb-2">Device IMEI</h2>
+                    <p className="text-lg text-gray-600">(Optional - You can skip this step)</p>
+                  </div>
+                  
+                  {/* ✅ INFO BOX: Explaining IMEI is optional */}
+                  <div className="bg-[#FEC925]/10 border-l-4 border-[#FEC925] p-4 rounded-r-lg">
+                    <div className="flex items-start gap-3">
+                      <Info size={20} className="text-[#FEC925] flex-shrink-0 mt-1" />
+                      <div>
+                        <p className="text-sm text-[#1C1C1B] font-semibold mb-1">IMEI is Optional</p>
+                        <p className="text-sm text-gray-600">
+                          You can provide the IMEI number to our pickup partner during device verification. 
+                          Click "Get My Estimate" to continue without entering it now.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
                   <div>
-                    <label className="block font-semibold text-lg text-[#1C1C1B] mb-3">IMEI Number</label>
-                    <input type="text" value={imei} onChange={(e) => setImei(e.target.value.replace(/\D/g, '').slice(0, 16))} placeholder="Enter 15-16 digit IMEI/MEID" maxLength={16} className="w-full p-4 border-2 border-gray-300 rounded-xl focus:border-[#FEC925] focus:ring-4 focus:ring-[#FEC925]/30 focus:outline-none font-medium transition" />
-                    <p className="text-sm text-gray-500 mt-2">Dial <strong className="text-[#1C1C1B]">*#06#</strong> to find your device's IMEI number.</p>
-                    <p className="text-sm text-gray-500 mt-1">You can skip this and provide it to the pickup partner.</p>
+                    <label className="block font-semibold text-lg text-[#1C1C1B] mb-3">
+                      IMEI Number (Optional)
+                    </label>
+                    <input 
+                      type="text" 
+                      value={imei} 
+                      onChange={(e) => setImei(e.target.value.replace(/\D/g, '').slice(0, 16))} 
+                      placeholder="Enter 15-16 digit IMEI/MEID (optional)" 
+                      maxLength={16} 
+                      className="w-full p-4 border-2 border-gray-300 rounded-xl focus:border-[#FEC925] focus:ring-4 focus:ring-[#FEC925]/30 focus:outline-none font-medium transition" 
+                    />
+                    <p className="text-sm text-gray-500 mt-2">
+                      Dial <strong className="text-[#1C1C1B]">*#06#</strong> to find your device's IMEI number.
+                    </p>
                   </div>
                 </motion.div>
               )}
@@ -750,39 +902,266 @@ const DeviceStepper: React.FC = () => {
                 </motion.div>
               )}
 
-              {/* --- Step 5: Pickup Details --- */}
+              {/* --- Step 5: Pickup Details (FINAL STEP) --- */}
               {step === 5 && (
                 <motion.div key="step5" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-8">
                   <h2 className="text-3xl font-bold text-[#1C1C1B] text-center">Schedule Pickup</h2>
+                  
+                  {/* ✅ ADDRESS SECTION WITH INLINE FORM */}
                   <div>
-                    <label className="block font-semibold text-lg text-[#1C1C1B] mb-3 flex items-center gap-2"><MapPin size={20} className="text-[#1B8A05]" /> Pickup Address *</label>
-                    {addresses.length === 0 ? (
-                      <div className="text-center py-8 bg-gray-50 rounded-lg">
+                    <label className="block font-semibold text-lg text-[#1C1C1B] mb-3 flex items-center gap-2">
+                      <MapPin size={20} className="text-[#1B8A05]" /> Pickup Address *
+                    </label>
+                    
+                    {/* Address List */}
+                    {addresses.length === 0 && !showAddressForm ? (
+                      <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                        <MapPin size={48} className="mx-auto mb-4 text-gray-400" />
                         <p className="text-gray-600 mb-4">No addresses found</p>
-                        <button onClick={() => navigate('/add-address', { state: { from: location.pathname, ...location.state } })} className="px-6 py-3 bg-gradient-to-r from-[#FEC925] to-[#1B8A05] text-[#1C1C1B] rounded-xl font-bold hover:shadow-lg transition">Add New Address</button>
+                        <button 
+                          type="button"
+                          onClick={() => {
+                            resetAddressForm();
+                            setShowAddressForm(true);
+                          }} 
+                          className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#FEC925] to-[#1B8A05] text-[#1C1C1B] rounded-xl font-bold hover:shadow-lg transition"
+                        >
+                          <Plus size={20} />
+                          Add New Address
+                        </button>
                       </div>
-                    ) : (
-                      <div className="space-y-3 max-h-48 overflow-y-auto pr-2">
-                        {addresses.map((addr) => (
-                          <button key={addr.id} onClick={() => setSelectedAddressId(addr.id)} className={`w-full p-4 border-2 rounded-xl text-left transition-all ${selectedAddressId === addr.id ? 'bg-[#FEC925]/20 border-[#FEC925] ring-2 ring-[#FEC925]/50' : 'border-gray-300 hover:border-[#FEC925]'}`}>
-                            <p className="font-bold text-[#1C1C1B]">{addr.type} {addr.is_default && <span className="text-xs font-medium bg-[#1B8A05] text-white px-2 py-0.5 rounded-full ml-2">Default</span>}</p>
-                            {/* ✅ FIX: Removed unnecessary optional chaining to fix TS18048 errors */}
-                            <p className="text-sm text-gray-700">{addr.line1} {addr.line2}</p>
-                            {/* ✅ FIX: Removed unnecessary optional chaining to fix TS18048 errors */}
-                            <p className="text-sm text-gray-700">{addr.city}, {addr.state} - {addr.postal_code}</p>
+                    ) : addresses.length > 0 && !showAddressForm ? (
+                      <>
+                        {/* Add New Address Button (when addresses exist) */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            resetAddressForm();
+                            setShowAddressForm(true);
+                          }}
+                          className="w-full mb-4 flex items-center justify-center gap-2 p-4 border-2 border-dashed border-[#FEC925] rounded-xl text-[#1C1C1B] font-semibold hover:bg-[#FEC925]/10 transition"
+                        >
+                          <Plus size={20} className="text-[#FEC925]" />
+                          Add New Address
+                        </button>
+                        
+                        {/* Address Cards */}
+                        <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
+                          {addresses.map((addr) => (
+                            <button 
+                              key={addr.id}
+                              type="button"
+                              onClick={() => setSelectedAddressId(addr.id)} 
+                              className={`w-full p-4 border-2 rounded-xl text-left transition-all ${
+                                selectedAddressId === addr.id 
+                                  ? 'bg-[#FEC925]/20 border-[#FEC925] ring-2 ring-[#FEC925]/50' 
+                                  : 'border-gray-300 hover:border-[#FEC925]'
+                              }`}
+                            >
+                              <p className="font-bold text-[#1C1C1B]">
+                                {addr.type} 
+                                {addr.is_default && (
+                                  <span className="text-xs font-medium bg-[#1B8A05] text-white px-2 py-0.5 rounded-full ml-2">
+                                    Default
+                                  </span>
+                                )}
+                              </p>
+                              <p className="text-sm text-gray-700">{addr.line1} {addr.line2}</p>
+                              <p className="text-sm text-gray-700">{addr.city}, {addr.state} - {addr.postal_code}</p>
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    ) : null}
+                    
+                    {/* ✅ INLINE ADDRESS FORM */}
+                    {showAddressForm && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="bg-[#F0F7F6] border-2 border-[#FEC925] rounded-xl p-6 mb-4"
+                      >
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="font-bold text-xl text-[#1C1C1B]">Add New Address</h3>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowAddressForm(false);
+                              resetAddressForm();
+                            }}
+                            className="text-gray-500 hover:text-[#FF0000] transition"
+                          >
+                            <X size={24} />
                           </button>
-                        ))}
-                      </div>
+                        </div>
+                        
+                        <form onSubmit={handleCreateAddress} className="space-y-4">
+                          {/* Address Type Selection */}
+                          <div>
+                            <label className="block font-semibold text-sm text-[#1C1C1B] mb-2">
+                              Address Type *
+                            </label>
+                            <div className="grid grid-cols-3 gap-3">
+                              {['home', 'office', 'other'].map((type) => (
+                                <button
+                                  key={type}
+                                  type="button"
+                                  onClick={() => setAddressFormData({...addressFormData, type: type as 'home' | 'office' | 'other'})}
+                                  className={`p-3 border-2 rounded-lg text-center font-medium transition-all capitalize ${
+                                    addressFormData.type === type
+                                      ? 'bg-[#FEC925]/20 border-[#FEC925] ring-2 ring-[#FEC925]/50'
+                                      : 'border-gray-300 hover:border-[#FEC925]'
+                                  }`}
+                                >
+                                  {type}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                          
+                          {/* Address Line 1 */}
+                          <div>
+                            <label className="block font-semibold text-sm text-[#1C1C1B] mb-2">
+                              Address Line 1 *
+                            </label>
+                            <input 
+                              type="text" 
+                              placeholder="House/Flat No., Building Name" 
+                              value={addressFormData.line1} 
+                              onChange={(e) => setAddressFormData({...addressFormData, line1: e.target.value})} 
+                              className="w-full p-3 border-2 border-gray-300 rounded-xl focus:border-[#FEC925] focus:ring-4 focus:ring-[#FEC925]/30 focus:outline-none transition" 
+                              required 
+                            />
+                          </div>
+                          
+                          {/* Address Line 2 */}
+                          <div>
+                            <label className="block font-semibold text-sm text-[#1C1C1B] mb-2">
+                              Address Line 2 (Optional)
+                            </label>
+                            <input 
+                              type="text" 
+                              placeholder="Street, Area, Locality" 
+                              value={addressFormData.line2} 
+                              onChange={(e) => setAddressFormData({...addressFormData, line2: e.target.value})} 
+                              className="w-full p-3 border-2 border-gray-300 rounded-xl focus:border-[#FEC925] focus:ring-4 focus:ring-[#FEC925]/30 focus:outline-none transition" 
+                            />
+                          </div>
+                          
+                          {/* City and State */}
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="block font-semibold text-sm text-[#1C1C1B] mb-2">
+                                City *
+                              </label>
+                              <input 
+                                type="text" 
+                                placeholder="City" 
+                                value={addressFormData.city} 
+                                onChange={(e) => setAddressFormData({...addressFormData, city: e.target.value})} 
+                                className="w-full p-3 border-2 border-gray-300 rounded-xl focus:border-[#FEC925] focus:ring-4 focus:ring-[#FEC925]/30 focus:outline-none transition" 
+                                required 
+                              />
+                            </div>
+                            <div>
+                              <label className="block font-semibold text-sm text-[#1C1C1B] mb-2">
+                                State *
+                              </label>
+                              <input 
+                                type="text" 
+                                placeholder="State" 
+                                value={addressFormData.state} 
+                                onChange={(e) => setAddressFormData({...addressFormData, state: e.target.value})} 
+                                className="w-full p-3 border-2 border-gray-300 rounded-xl focus:border-[#FEC925] focus:ring-4 focus:ring-[#FEC925]/30 focus:outline-none transition" 
+                                required 
+                              />
+                            </div>
+                          </div>
+                          
+                          {/* Pincode */}
+                          <div>
+                            <label className="block font-semibold text-sm text-[#1C1C1B] mb-2">
+                              Pincode *
+                            </label>
+                            <input 
+                              type="text" 
+                              placeholder="6-digit pincode" 
+                              value={addressFormData.postal_code} 
+                              onChange={(e) => setAddressFormData({...addressFormData, postal_code: e.target.value.replace(/\D/g, '').slice(0, 6)})} 
+                              className="w-full p-3 border-2 border-gray-300 rounded-xl focus:border-[#FEC925] focus:ring-4 focus:ring-[#FEC925]/30 focus:outline-none transition" 
+                              maxLength={6}
+                              required 
+                            />
+                          </div>
+                          
+                          {/* Set as Default */}
+                          <div className="flex items-center gap-3">
+                            <input 
+                              type="checkbox" 
+                              id="is_default"
+                              checked={addressFormData.is_default}
+                              onChange={(e) => setAddressFormData({...addressFormData, is_default: e.target.checked})}
+                              className="w-5 h-5 rounded border-2 border-gray-300 text-[#FEC925] focus:ring-[#FEC925]"
+                            />
+                            <label htmlFor="is_default" className="font-medium text-[#1C1C1B] cursor-pointer">
+                              Set as default address
+                            </label>
+                          </div>
+                          
+                          {/* Form Buttons */}
+                          <div className="flex gap-3 pt-2">
+                            <button 
+                              type="button" 
+                              onClick={() => {
+                                setShowAddressForm(false);
+                                resetAddressForm();
+                              }} 
+                              className="flex-1 py-3 border-2 border-gray-300 rounded-xl font-semibold text-[#1C1C1B] hover:bg-gray-50 transition"
+                            >
+                              Cancel
+                            </button>
+                            <button 
+                              type="submit" 
+                              disabled={loading} 
+                              className="flex-1 py-3 bg-gradient-to-r from-[#FEC925] to-[#1B8A05] text-[#1C1C1B] rounded-xl font-bold hover:shadow-lg disabled:opacity-50 transition"
+                            >
+                              {loading ? 'Saving...' : 'Save Address'}
+                            </button>
+                          </div>
+                        </form>
+                      </motion.div>
                     )}
                   </div>
+                  
+                  {/* Date and Time Selection */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block font-semibold text-lg text-[#1C1C1B] mb-3 flex items-center gap-2"><Calendar size={20} className="text-[#1B8A05]" /> Preferred Date *</label>
-                      <input type="date" value={preferredDate} onChange={(e) => setPreferredDate(e.target.value)} min={getMinDate()} max={getMaxDate()} className="w-full p-4 border-2 border-gray-300 rounded-xl focus:border-[#FEC925] focus:ring-4 focus:ring-[#FEC925]/30 focus:outline-none font-medium transition" />
+                      <label className="block font-semibold text-lg text-[#1C1C1B] mb-3 flex items-center gap-2">
+                        <Calendar size={20} className="text-[#1B8A05]" /> Preferred Date *
+                      </label>
+                      <select 
+                        value={preferredDate} 
+                        onChange={(e) => setPreferredDate(e.target.value)} 
+                        className="w-full p-4 border-2 border-gray-300 rounded-xl focus:border-[#FEC925] focus:ring-4 focus:ring-[#FEC925]/30 focus:outline-none font-medium transition bg-white appearance-none"
+                      >
+                        <option value="" disabled>Select a pickup date</option>
+                        {availableDates.map((date) => (
+                          <option key={date.value} value={date.value}>
+                            {date.label}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <div>
-                      <label className="block font-semibold text-lg text-[#1C1C1B] mb-3 flex items-center gap-2"><Clock size={20} className="text-[#1B8A05]" /> Time Slot *</label>
-                      <select value={timeSlot} onChange={(e) => setTimeSlot(e.target.value)} className="w-full p-4 border-2 border-gray-300 rounded-xl focus:border-[#FEC925] focus:ring-4 focus:ring-[#FEC925]/30 focus:outline-none font-medium transition bg-white appearance-none">
+                      <label className="block font-semibold text-lg text-[#1C1C1B] mb-3 flex items-center gap-2">
+                        <Clock size={20} className="text-[#1B8A05]" /> Time Slot *
+                      </label>
+                      <select 
+                        value={timeSlot} 
+                        onChange={(e) => setTimeSlot(e.target.value)} 
+                        className="w-full p-4 border-2 border-gray-300 rounded-xl focus:border-[#FEC925] focus:ring-4 focus:ring-[#FEC925]/30 focus:outline-none font-medium transition bg-white appearance-none"
+                      >
                         <option value="" disabled>Select a time slot</option>
                         {timeSlots.map((slot) => (
                           <option key={slot.value} value={slot.value}>{slot.label}</option>
@@ -790,73 +1169,63 @@ const DeviceStepper: React.FC = () => {
                       </select>
                     </div>
                   </div>
+                  
+                  {/* Special Instructions */}
                   <div>
-                    <label className="block font-semibold text-lg text-[#1C1C1B] mb-3">Special Instructions (Optional)</label>
-                    <textarea value={specialInstructions} onChange={(e) => setSpecialInstructions(e.target.value)} placeholder="e.g., Call on arrival..." rows={3} className="w-full p-4 border-2 border-gray-300 rounded-xl focus:border-[#FEC925] focus:ring-4 focus:ring-[#FEC925]/30 focus:outline-none font-medium transition resize-none" />
+                    <label className="block font-semibold text-lg text-[#1C1C1B] mb-3">
+                      Special Instructions (Optional)
+                    </label>
+                    <textarea 
+                      value={specialInstructions} 
+                      onChange={(e) => setSpecialInstructions(e.target.value)} 
+                      placeholder="e.g., Call on arrival, Building gate code, etc." 
+                      rows={3} 
+                      className="w-full p-4 border-2 border-gray-300 rounded-xl focus:border-[#FEC925] focus:ring-4 focus:ring-[#FEC925]/30 focus:outline-none font-medium transition resize-none" 
+                    />
                   </div>
                 </motion.div>
               )}
 
-              {/* --- Step 6: Photos (Final Step) --- */}
-              {step === 6 && (
-                <motion.div key="step6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-8">
-                  <h2 className="text-3xl font-bold text-[#1C1C1B] text-center">Upload Device Photos</h2>
-                  <div>
-                    <label className="block font-semibold text-lg text-[#1C1C1B] mb-3 flex items-center gap-2"><Camera size={20} className="text-[#1B8A05]" /> Device Photos *</label>
-                    <p className="text-sm text-gray-500 mb-4">Please provide clear photos: <strong className="text-[#1C1C1B]">1. Front Screen (On)</strong>, <strong className="text-[#1C1C1B]">2. Back Panel</strong>. Add more for any damages.</p>
-                    <div className="grid grid-cols-3 gap-4">
-                      {photos.map((photo, idx) => (
-                        <div key={idx} className="relative group aspect-square">
-                          <img src={URL.createObjectURL(photo)} alt={`Photo ${idx + 1}`} className="w-full h-full object-cover rounded-lg border-2 border-gray-200" />
-                          <button onClick={() => removePhoto(idx)} className="absolute top-1 right-1 bg-[#FF0000] text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">×</button>
-                        </div>
-                      ))}
-                      {photos.length < 6 && (
-                        <label className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-[#FEC925] hover:bg-[#FEC925]/10 transition">
-                          <Upload className="text-gray-400 mb-2" />
-                          <span className="text-sm text-gray-500">Upload</span>
-                          <input type="file" accept="image/*" multiple onChange={handlePhotoUpload} className="hidden" />
-                        </label>
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
-              )}
+              {/* ✅ REMOVED: Step 6 (Photos) entirely */}
 
             </AnimatePresence>
 
             {/* --- Navigation Buttons --- */}
             <div className="flex gap-4 mt-8">
               {step > 1 && (
-                <button onClick={handleBack} disabled={loading} className="flex items-center gap-2 px-6 py-4 border-2 border-gray-300 rounded-xl hover:bg-gray-100 font-bold text-lg text-[#1C1C1B] transition disabled:opacity-50">
+                <button 
+                  onClick={handleBack} 
+                  disabled={loading} 
+                  className="flex items-center gap-2 px-6 py-4 border-2 border-gray-300 rounded-xl hover:bg-gray-100 font-bold text-lg text-[#1C1C1B] transition disabled:opacity-50"
+                >
                   <ArrowLeft size={20} />
                   Back
                 </button>
               )}
-              {step < 6 ? ( // Show "Next" for steps 1-5
-                <button
-                  onClick={handleNext}
-                  disabled={loading}
-                  className="flex-1 flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-[#FEC925] to-[#1B8A05] text-[#1C1C1B] rounded-xl hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed font-bold text-lg shadow-lg transition"
-                >
-                  {loading ? (<><Loader2 className="animate-spin" size={24} /> Processing...</>)
-                    : step === 1 ? (<>Next: Condition <ArrowRight size={20} /></>)
-                    : step === 2 ? (<>Next: IMEI <ArrowRight size={20} /></>)
-                    : step === 3 ? ('Get My Estimate')
-                    : step === 4 ? (<>Want to Sell? Book Pickup <ArrowRight size={20} /></>)
-                    : step === 5 ? (<>Next: Add Photos <ArrowRight size={20} /></>)
-                    : ''
-                  }
-                </button>
-              ) : ( // Show "Confirm" on Step 6
-                <button
-                  onClick={handleNext}
-                  disabled={loading}
-                  className="flex-1 flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-[#FEC925] to-[#1B8A05] text-[#1C1C1B] rounded-xl hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed font-bold text-lg shadow-lg transition"
-                >
-                  {loading ? (<><Loader2 className="animate-spin" size={24} /> Submitting...</>) : ('Confirm & Create Lead')}
-                </button>
-              )}
+              {/* ✅ UPDATED: Button logic for 5 steps */}
+              <button
+                onClick={handleNext}
+                disabled={loading}
+                className="flex-1 flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-[#FEC925] to-[#1B8A05] text-[#1C1C1B] rounded-xl hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed font-bold text-lg shadow-lg transition"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="animate-spin" size={24} /> Processing...
+                  </>
+                ) : step === 1 ? (
+                  <>Next: Condition <ArrowRight size={20} /></>
+                ) : step === 2 ? (
+                  <>Next: IMEI <ArrowRight size={20} /></>
+                ) : step === 3 ? (
+                  'Get My Estimate'
+                ) : step === 4 ? (
+                  <>Schedule Pickup <ArrowRight size={20} /></>
+                ) : step === 5 ? (
+                  'Confirm & Create Lead'
+                ) : (
+                  ''
+                )}
+              </button>
             </div>
           </div>
         </motion.div>

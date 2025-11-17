@@ -1,37 +1,32 @@
-import { BrowserRouter as Router, Routes, Route, useNavigate, Link } from 'react-router-dom';
-import { AlertTriangle, Home as HomeIcon } from 'lucide-react'; // Added icons and Link
+// src/App.tsx
+import { Routes, Route, useNavigate, Link } from 'react-router-dom';
+import { AlertTriangle, Home as HomeIcon } from 'lucide-react';
+import { InstallPWAPrompt } from './components/InstallPWAPrompt';
 
 // Context Providers
 import { AuthProvider } from './context/AuthContext';
 import { SellFlowProvider } from './context/SellFlowContext';
 
 // Layout
-import HeaderRibbon from './components/layout/HeaderRibbon';
 import MainNavbar from './components/layout/MainNavbar';
 import Footer from './components/layout/Footer';
 
 // Home
-import HeroBanner from './components/home/HeroBanner';
+import HeroBanner from './components/home/HeroBanner2';
 import CustomerReviews from './components/home/CustomerReviews';
-import TopBrands from './components/home/TopBrands';
+// import TopBrands from './components/home/TopBrands';
 import BlogSlider from './components/home/BlogSlider';
 import BlogSection from './components/home/BlogSection';
-// import BlogDetailPage from './components/home/BlogDetailPage';
-import FAQSection from './components/home/FAQSection';
+// import FAQSection from './components/home/FAQSection';
 import DownloadAppBanner from './components/home/DownloadAppBanner';
 import AboutSection from './components/home/AboutSection';
 import CategorySlider from './components/home/CategorySlider';
 import SellOldDevice from './components/home/SellOldDevice';
 
 // Sell Flow
-// import SellProductSection from './components/sell-flow/SellProductSection';
 import ChooseBrand from './components/sell-flow/ChooseBrand';
 import SelectModel from './components/sell-flow/SelectModel';
 import DeviceStepper from './components/sell-flow/DeviceStepper';
-// import SelectAddress from './components/sell-flow/SelectAddress';
-// import SlotBooking from './components/sell-flow/SlotBooking';
-// import PreviewPage from './components/sell-flow/PreviewPage';
-// import SuccessPage from './components/sell-flow/SuccessPage';
 
 // Account
 import MyAccountPage from './components/account/MyAccountPage';
@@ -48,8 +43,11 @@ import KYCPage from './components/account/KYCPage';
 import LeadDetailPage from './components/pages/LeadDetailPage';
 import ScrollToTop from './api/utils/ScrollToTop';
 import ContactUsPage from './components/pages/ContactUsPage';
-
-// (Other page imports remain commented)
+import TermsAndConditions from './components/pages/TermsAndConditions';
+import PrivacyPolicy from './components/pages/PrivacyPolicy';
+import RefundPolicy from './components/pages/RefundPolicy';
+import FAQ from './components/home/FAQSection';
+import TermsOfUse from './components/pages/TermsOfUse';
 
 function Home() {
   return (
@@ -59,14 +57,14 @@ function Home() {
       <SellOldDevice />
       <DownloadAppBanner />
       <CustomerReviews />
-      <TopBrands />
+      {/* <TopBrands /> */}
       <BlogSlider />
-      <FAQSection />
+      <FAQ />
     </main>
   );
 }
 
-// --- ✅ NEW NOT FOUND PAGE COMPONENT ---
+// Not Found Page Component
 function NotFoundPage() {
   return (
     <main className="flex-grow flex items-center justify-center py-24 bg-gray-50">
@@ -90,32 +88,22 @@ function NotFoundPage() {
     </main>
   );
 }
-// --- END OF NEW COMPONENT ---
-
 
 function AppRoutes() {
   const navigate = useNavigate();
 
-  // 1. Update the type to include all possible string values
   const handleNavClick = (tab: MenuTab | 'Passbook' | 'account' | 'kyc' | 'bank') => {
-    
-    // 2. Add logic to handle the new cases
     if (tab === 'Dashboard') {
       navigate('/my-account');
     } else if (tab === 'Passbook') {
       navigate('/my-account/passbook');
     } else if (tab === 'account') {
-      // 'account' is used to go back to the main Account Details page
       navigate('/my-account/account-details');
     } else if (tab === 'kyc') {
       navigate('/my-account/kyc');
     } else if (tab === 'bank') {
-      // This route in App.tsx pointed to MyAccountPage, 
-      // but should probably point to a dedicated bank page.
-      // For now, let's make it navigate to the bank page route.
-      navigate('/my-account/bank'); 
+      navigate('/my-account/bank');
     } else {
-      // This handles all standard MenuTab strings like "My Orders"
       navigate(`/my-account/${tab.replace(/\s+/g, '-').toLowerCase()}`);
     }
   };
@@ -140,17 +128,22 @@ function AppRoutes() {
 
   return (
     <>
+      {/* PWA Install Prompt */}
+      <InstallPWAPrompt />
       <ScrollToTop />
-      <HeaderRibbon />
       <MainNavbar isLoggedIn={false} onAccountClick={() => navigate('/my-account')} />
       
       <div className="pt-[0px]">
-        <Routes>
+          <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/blog" element={<BlogSection />} />
           {/* <Route path="/blog/:id" element={<BlogDetailPage />} /> */}
-          <Route path="/faq" element={<FAQSection />} />
+          <Route path="/faq" element={<FAQ />} />
           <Route path="/about" element={<AboutSection />} />
+          <Route path="/terms" element={<TermsAndConditions />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/refund-policy" element={<RefundPolicy />} />
+          <Route path="/terms-of-use" element={<TermsOfUse />} />
           <Route path="/sell-old-product" element={<SellOldDevice />} />
           <Route path="/select-brand" element={<ChooseBrand />} />
           <Route path="/select-model" element={<SelectModel />} />
@@ -177,7 +170,6 @@ function AppRoutes() {
           <Route path="/contact" element={<ContactUsPage />} />
           {/* This must be the LAST route in the list */}
           <Route path="*" element={<NotFoundPage />} />
-          
         </Routes>
       </div>
 
@@ -190,9 +182,7 @@ function App() {
   return (
     <AuthProvider>
       <SellFlowProvider>
-        <Router>
-          <AppRoutes />
-        </Router>
+        <AppRoutes />
       </SellFlowProvider>
     </AuthProvider>
   );

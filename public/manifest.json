@@ -1,0 +1,15 @@
+{
+  "name": "FlipCash",
+  "short_name": "FlipCash",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#FEC925",
+  "icons": [
+    {
+      "src": "/flipcash.png",
+      "type": "image/png",
+      "sizes": "192x192" 
+    }
+  ]
+}

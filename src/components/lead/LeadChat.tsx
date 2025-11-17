@@ -70,7 +70,7 @@ const LeadChat: React.FC<LeadChatProps> = ({ leadId, currentUserId, partnerAssig
     if (!leadId) return;
     fetchMessages(); // Initial fetch
     
-    const interval = setInterval(fetchMessages, 10000);
+    const interval = setInterval(fetchMessages, 600000);
     return () => clearInterval(interval);
   }, [leadId]);
 
