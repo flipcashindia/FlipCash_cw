@@ -370,7 +370,7 @@ const RaiseDisputeModal: React.FC<RaiseDisputeModalProps> = ({
                   />
                   {evidenceDocuments.length > 0 && (
                     <div className="mt-3 space-y-2">
-                      {evidenceDocuments.map((doc, idx) => (
+                      {evidenceDocuments.map((_doc, idx) => (
                         <div key={idx} className="flex items-center justify-between bg-white p-3 rounded-lg border border-gray-200">
                           <div className="flex items-center gap-2">
                             <FileText className="text-[#1B8A05]" size={16} />

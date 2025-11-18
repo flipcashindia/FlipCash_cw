@@ -1,5 +1,5 @@
 // src/components/rating/RateLeadModal.tsx
-import React, { useState } from 'react';
+import React, { useState, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, X, Star, ThumbsUp, MessageSquare, Clock, Award } from 'lucide-react';
 
@@ -157,7 +157,7 @@ const RateLeadModal: React.FC<RateLeadModalProps> = ({
     }
   };
 
-  const renderStars = (category: keyof RatingCriteria, label: string, icon: JSX.Element) => {
+  const renderStars = (category: keyof RatingCriteria, label: string, icon: ReactNode) => {
     return (
       <div className="p-4 bg-gray-50 rounded-xl border-2 border-gray-200">
         <div className="flex items-center justify-between mb-3">

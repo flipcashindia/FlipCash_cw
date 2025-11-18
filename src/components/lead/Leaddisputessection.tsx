@@ -1,5 +1,5 @@
 // src/components/lead/LeadDisputesSection.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   AlertTriangle, 
@@ -38,7 +38,7 @@ const DISPUTE_TYPE_LABELS: Record<string, string> = {
   'other': 'Other'
 };
 
-const STATUS_CONFIG: Record<string, { color: string; bgColor: string; icon: JSX.Element }> = {
+const STATUS_CONFIG: Record<string, { color: string; bgColor: string; icon: ReactNode }> = {
   'pending': {
     color: '#FEC925',
     bgColor: 'rgba(254, 201, 37, 0.1)',

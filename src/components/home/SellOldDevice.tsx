@@ -1,5 +1,7 @@
+// flipcash_cw/src/components/home/SellOldDevice.tsx
+
 import React, { useState, useEffect } from 'react';
-import { Search, ChevronRight, Star, TrendingUp, Smartphone, Loader2, Sparkles } from 'lucide-react';
+import { ChevronRight, Star, TrendingUp, Smartphone, Sparkles } from 'lucide-react';
 import * as catalogService from '../../api/services/catalogService';
 import { useImageCache } from '../../api/utils/imageCache';
 import type { Category, Brand, Model } from '../../api/types/catalog.types';
@@ -57,11 +59,11 @@ const SellOldDevice: React.FC = () => {
   
   const [selectedCategory, _setSelectedCategory] = useState<string | null>(null);
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  
+  // const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [_error, setError] = useState<string | null>(null);
-  const [searchLoading, setSearchLoading] = useState(false);
+  // const [searchLoading, setSearchLoading] = useState(false);
 
   // Fetch categories and featured models on mount
   useEffect(() => {

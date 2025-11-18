@@ -1,4 +1,5 @@
 // src/App.tsx
+import React from 'react';
 import { Routes, Route, useNavigate, Link } from 'react-router-dom';
 import { AlertTriangle, Home as HomeIcon } from 'lucide-react';
 import { InstallPWAPrompt } from './components/InstallPWAPrompt';

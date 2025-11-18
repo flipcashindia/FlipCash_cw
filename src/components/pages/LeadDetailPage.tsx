@@ -169,7 +169,7 @@ const LeadDetailPageComplete: React.FC = () => {
     }
   };
 
-  const checkRatingStatus = async (leadId: string, partnerUserId: string) => {
+  const checkRatingStatus = async (leadId: string, _partnerUserId: string) => {
     try {
       setCheckingRating(true);
       const token = localStorage.getItem('access_token');
