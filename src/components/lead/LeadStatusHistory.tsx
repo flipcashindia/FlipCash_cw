@@ -52,7 +52,7 @@ const LeadStatusHistory: React.FC<LeadStatusHistoryProps> = ({ leadId }) => {
         const token = localStorage.getItem('access_token');
         if (!token) throw new Error("Authentication required.");
 
-        const res = await fetch(`${API_BASE_URL}/leads/leads/${leadId}/status-history/`, { //
+        const res = await fetch(`${API_BASE_URL}/leads/leads/${leadId}/status_history/`, { //
           headers: { 'Authorization': `Bearer ${token}` }
         });
 
