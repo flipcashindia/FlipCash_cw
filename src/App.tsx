@@ -1,4 +1,5 @@
 // src/App.tsx
+import React from 'react';
 import { Routes, Route, useNavigate, Link } from 'react-router-dom';
 import { AlertTriangle, Home as HomeIcon } from 'lucide-react';
 import { InstallPWAPrompt } from './components/InstallPWAPrompt';
@@ -48,6 +49,10 @@ import PrivacyPolicy from './components/pages/PrivacyPolicy';
 import RefundPolicy from './components/pages/RefundPolicy';
 import FAQ from './components/home/FAQSection';
 import TermsOfUse from './components/pages/TermsOfUse';
+import CookiePolicy from './components/pages/CookiePolicy';
+import Career from './components/pages/Career';
+import DisputesList from './components/lead/Disputeslist';
+import DisputeDetail from './components/lead/Disputedetail';
 
 function Home() {
   return (
@@ -144,7 +149,9 @@ function AppRoutes() {
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/refund-policy" element={<RefundPolicy />} />
           <Route path="/terms-of-use" element={<TermsOfUse />} />
+          <Route path="/career" element={<Career />} />
           <Route path="/sell-old-product" element={<SellOldDevice />} />
+          <Route path="/cookies" element={<CookiePolicy />} />
           <Route path="/select-brand" element={<ChooseBrand />} />
           <Route path="/select-model" element={<SelectModel />} />
           
@@ -167,6 +174,8 @@ function AppRoutes() {
           <Route path="/my-account/feedback" element={<FeedbackPage {...accountProps} />} />
           <Route path="/my-account/kyc" element={<KYCPage {... accountProps } />} />
           <Route path="/my-account/bank" element={<MyAccountPage {...accountProps} />} />
+          <Route path="/disputes" element={<DisputesList />} />
+          <Route path="/disputes/:disputeId" element={<DisputeDetail />} />
           <Route path="/contact" element={<ContactUsPage />} />
           {/* This must be the LAST route in the list */}
           <Route path="*" element={<NotFoundPage />} />

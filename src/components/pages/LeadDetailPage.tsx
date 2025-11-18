@@ -1,3 +1,4 @@
+// src/pages/leads/LeadDetailPageComplete.tsx
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { 
@@ -12,43 +13,44 @@ import {
   Shield,
   CheckCircle,
   Tag,
-  MessageSquare, // Icon for Chat
-  Activity // Icon for History
+  MessageSquare,
+  Activity,
+  Calendar,
+  XCircle,
+  Star
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// --- Import the new components ---
+// Import modals and components
 import LeadStatusHistory from '../lead/LeadStatusHistory';
 import LeadChat from '../lead/LeadChat';
-import RaiseDisputeModal from '../lead/RaiseDisputeModal';
+import RaiseDisputeModal from '../../components/lead/RaiseDisputeModal';
+import CancelLeadModal from '../../components/lead/Cancelleadmodal';
+import RescheduleModal from '../../components/lead/Reschedulemodal';
+import RateLeadModal from '../../components/lead/Rateleadmodal';
+import LeadDisputesSection from '../../components/lead/Leaddisputessection';
 
 // API Configuration
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-// --- Interfaces based on GET /leads/{id}/ response ---
-
-// --- START OF FIX: Simplified DeviceModel interface ---
-// Your serializer provides a flattened brand_name, not a nested object
+// Interfaces
 interface DeviceModel { 
   id: string;
   name: string;
-  // base_price is not in DeviceModelListSerializer, it's on the lead
 }
-// --- END OF FIX ---
 
 interface LeadUser { id: string; phone: string; name: string; email: string; }
-interface Partner { id: string; business_name: string; contact_person: string; phone: string; rating_average: string; total_leads_completed: number; }
+interface Partner { id: string; user: string; business_name: string; contact_person: string; phone: string; rating_average: string; total_leads_completed: number; }
 interface PickupAddress { id: string; address_line1: string; address_line2?: string; city: string; state: string; pincode: string; landmark?: string; }
 interface DevicePhoto { url: string; description: string; }
 interface LatestOffer { id: string; partner_offered_price: string; message: string; status: string; created_at: string; }
 
-// --- START OF FIX: Updated LeadDetail interface ---
 interface LeadDetail {
   id: string;
   lead_number: string;
   user: LeadUser;
-  device_model: DeviceModel; // Uses the simplified interface
-  brand_name: string; // <-- This is the correct top-level field
+  device_model: DeviceModel;
+  brand_name: string;
   storage: string;
   ram: string;
   color: string;
@@ -68,10 +70,8 @@ interface LeadDetail {
   latest_offer: LatestOffer | null;
   created_at: string;
 }
-// --- END OF FIX ---
 
-
-// --- (ErrorDisplay, DetailCard, DetailRow, renderStatusBadge, capitalize... all helpers remain the same) ---
+// Helper Components
 interface ErrorDisplayProps { message: string; onDismiss: () => void; }
 const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ message, onDismiss }) => (
   <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="mb-6 p-4 bg-[#FF0000]/10 border-2 border-[#FF0000] rounded-xl flex items-center justify-between">
@@ -79,6 +79,7 @@ const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ message, onDismiss }) => (
     <button onClick={onDismiss} className="text-[#FF0000] hover:opacity-70"><X size={20} /></button>
   </motion.div>
 );
+
 interface DetailCardProps { icon: React.ReactNode; title: string; children: React.ReactNode; }
 const DetailCard: React.FC<DetailCardProps> = ({ icon, title, children }) => (
   <div className="bg-white p-6 rounded-2xl shadow-xl border-2 border-[#FEC925]/20 hover:shadow-2xl transition-shadow">
@@ -89,6 +90,7 @@ const DetailCard: React.FC<DetailCardProps> = ({ icon, title, children }) => (
     <div className="space-y-3">{children}</div>
   </div>
 );
+
 interface DetailRowProps { label: string; value: string | number | null; }
 const DetailRow: React.FC<DetailRowProps> = ({ label, value }) => (
   <div className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
@@ -96,6 +98,7 @@ const DetailRow: React.FC<DetailRowProps> = ({ label, value }) => (
     <span className="font-bold text-[#1C1C1B] text-right">{value || 'N/A'}</span>
   </div>
 );
+
 const renderStatusBadge = (status: string) => {
   let colorClasses = "bg-gray-200 text-gray-800";
   if (status.includes("Completed") || status.includes("Accepted")) colorClasses = "bg-[#1B8A05]/20 text-[#1B8A05]";
@@ -103,18 +106,25 @@ const renderStatusBadge = (status: string) => {
   else if (status.includes("Cancelled") || status.includes("Rejected")) colorClasses = "bg-[#FF0000]/10 text-[#FF0000]";
   return (<span className={`px-4 py-1.5 rounded-full text-sm font-bold ${colorClasses}`}>{status}</span>);
 };
+
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
-
-// --- Main Lead Detail Page Component ---
-const LeadDetailPage: React.FC = () => {
+// Main Component
+const LeadDetailPageComplete: React.FC = () => {
   const navigate = useNavigate();
   const { leadId } = useParams<{ leadId: string }>();
 
   const [leadDetails, setLeadDetails] = useState<LeadDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasRated, setHasRated] = useState(false);
+  const [checkingRating, setCheckingRating] = useState(false);
+  
+  // Modal states
   const [isDisputeModalOpen, setIsDisputeModalOpen] = useState(false);
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [isRescheduleModalOpen, setIsRescheduleModalOpen] = useState(false);
+  const [isRateModalOpen, setIsRateModalOpen] = useState(false);
 
   useEffect(() => {
     if (!leadId) {
@@ -146,6 +156,11 @@ const LeadDetailPage: React.FC = () => {
       }
       const data: LeadDetail = await res.json();
       setLeadDetails(data);
+      
+      // Check if lead is completed and check rating status
+      if (data.status === 'completed' && data.assigned_partner) {
+        checkRatingStatus(id, data.assigned_partner.user);
+      }
     } catch (error: any) {
       console.error('Failed to load lead details:', error);
       setError(error.message);
@@ -154,10 +169,47 @@ const LeadDetailPage: React.FC = () => {
     }
   };
 
-  const handleDisputeSuccess = () => {
-    if (leadId) {
-      loadLeadDetails(leadId); // Re-fetch the lead data
+  const checkRatingStatus = async (leadId: string, _partnerUserId: string) => {
+    try {
+      setCheckingRating(true);
+      const token = localStorage.getItem('access_token');
+      if (!token) return;
+
+      // Check if user has already rated this lead
+      const res = await fetch(`${API_BASE_URL}/ops/ratings/?lead=${leadId}&rater=${localStorage.getItem('user_id')}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const ratings = data.results || data;
+        setHasRated(ratings.length > 0);
+      }
+    } catch (err) {
+      console.error('Failed to check rating status:', err);
+    } finally {
+      setCheckingRating(false);
     }
+  };
+
+  const handleActionSuccess = () => {
+    if (leadId) {
+      loadLeadDetails(leadId);
+    }
+  };
+
+  const canCancelOrReschedule = (status: string): boolean => {
+    const nonCancellableStatuses = ['completed', 'cancelled', 'payment_processing', 'disputed'];
+    return !nonCancellableStatuses.includes(status.toLowerCase());
+  };
+
+  const shouldShowRateButton = (): boolean => {
+    return (
+      leadDetails?.status === 'completed' &&
+      leadDetails?.assigned_partner !== null &&
+      !hasRated &&
+      !checkingRating
+    );
   };
 
   if (loading) {
@@ -191,43 +243,87 @@ const LeadDetailPage: React.FC = () => {
         {leadDetails && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             {/* Top Info Bar */}
-            <div className="bg-white p-6 rounded-2xl shadow-xl border-2 border-[#FEC925]/20 mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-              <div>
-                <h2 className="text-3xl font-bold text-[#1C1C1B] mb-1">
-                  Lead #{leadDetails.lead_number}
-                </h2>
-                <p className="text-gray-600">
-                  Created on: {new Date(leadDetails.created_at).toLocaleDateString('en-IN', {
-                    day: 'numeric', month: 'long', year: 'numeric'
-                  })}
-                </p>
-              </div>
-              
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-                {renderStatusBadge(leadDetails.status_display)}
+            <div className="bg-white p-6 rounded-2xl shadow-xl border-2 border-[#FEC925]/20 mb-8">
+              <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+                {/* Lead Info */}
+                <div className="flex-1">
+                  <h2 className="text-3xl font-bold text-[#1C1C1B] mb-1">
+                    Lead #{leadDetails.lead_number}
+                  </h2>
+                  <p className="text-gray-600">
+                    Created on: {new Date(leadDetails.created_at).toLocaleDateString('en-IN', {
+                      day: 'numeric', month: 'long', year: 'numeric'
+                    })}
+                  </p>
+                </div>
                 
-                {leadDetails.status !== 'cancelled' && leadDetails.status !== 'completed' && (
-                  <button 
-                    onClick={() => setIsDisputeModalOpen(true)}
-                    className="px-4 py-2 bg-[#FF0000]/10 text-[#FF0000] rounded-lg font-bold flex items-center gap-2 hover:bg-[#FF0000] hover:text-white transition-all"
-                  >
-                    <AlertTriangle size={16} />
-                    Report an Issue
-                  </button>
-                )}
+                {/* Status & Actions */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
+                  {renderStatusBadge(leadDetails.status_display)}
+                  
+                  {/* Rate Button - Only show for completed leads that haven't been rated */}
+                  {shouldShowRateButton() && (
+                    <button 
+                      onClick={() => setIsRateModalOpen(true)}
+                      className="flex-1 sm:flex-none px-4 py-2 bg-[#1B8A05] text-white rounded-lg font-bold flex items-center justify-center gap-2 hover:bg-[#156d04] transition-all shadow-lg"
+                    >
+                      <Star size={16} />
+                      Rate Service
+                    </button>
+                  )}
+
+                  {/* Show rating status if already rated */}
+                  {leadDetails.status === 'completed' && hasRated && (
+                    <div className="flex-1 sm:flex-none px-4 py-2 bg-[#1B8A05]/20 text-[#1B8A05] rounded-lg font-bold flex items-center justify-center gap-2">
+                      <CheckCircle size={16} />
+                      Rated
+                    </div>
+                  )}
+                  
+                  {canCancelOrReschedule(leadDetails.status) && (
+                    <div className="flex gap-3">
+                      {/* Reschedule Button */}
+                      <button 
+                        onClick={() => setIsRescheduleModalOpen(true)}
+                        className="flex-1 sm:flex-none px-4 py-2 bg-[#FEC925]/20 text-[#1C1C1B] rounded-lg font-bold flex items-center justify-center gap-2 hover:bg-[#FEC925] transition-all"
+                      >
+                        <Calendar size={16} />
+                        Reschedule
+                      </button>
+                      
+                      {/* Cancel Button */}
+                      <button 
+                        onClick={() => setIsCancelModalOpen(true)}
+                        className="flex-1 sm:flex-none px-4 py-2 bg-[#FF0000]/10 text-[#FF0000] rounded-lg font-bold flex items-center justify-center gap-2 hover:bg-[#FF0000] hover:text-white transition-all"
+                      >
+                        <XCircle size={16} />
+                        Cancel
+                      </button>
+                    </div>
+                  )}
+                  
+                  {/* Report Issue Button */}
+                  {leadDetails.status !== 'cancelled' && leadDetails.status !== 'completed' && (
+                    <button 
+                      onClick={() => setIsDisputeModalOpen(true)}
+                      className="flex-1 sm:flex-none px-4 py-2 bg-[#FF0000]/10 text-[#FF0000] rounded-lg font-bold flex items-center justify-center gap-2 hover:bg-[#FF0000] hover:text-white transition-all"
+                    >
+                      <AlertTriangle size={16} />
+                      Report Issue
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
 
-            {/* Main Details Grid (with chat and history) */}
+            {/* Main Details Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               
-              {/* --- Main Content (Left Column) --- */}
+              {/* Main Content (Left Column) */}
               <div className="lg:col-span-2 space-y-8">
                 
                 <DetailCard icon={<Package size={24} className="text-[#FEC925]" />} title="Device Details">
-                  {/* --- START OF FIX --- */}
                   <DetailRow label="Device" value={`${leadDetails.brand_name} ${leadDetails.device_model.name}`} />
-                  {/* --- END OF FIX --- */}
                   <DetailRow label="Storage" value={leadDetails.storage} />
                   <DetailRow label="RAM" value={leadDetails.ram} />
                   <DetailRow label="Color" value={leadDetails.color} />
@@ -282,9 +378,14 @@ const LeadDetailPage: React.FC = () => {
                   )}
                 </DetailCard>
 
+                {/* Disputes Section */}
+                <DetailCard icon={<AlertTriangle size={24} className="text-[#FEC925]" />} title="Disputes & Issues">
+                  <LeadDisputesSection leadId={leadDetails.id} />
+                </DetailCard>
+
               </div>
               
-              {/* --- Sidebar (Right Column) --- */}
+              {/* Sidebar (Right Column) */}
               <div className="lg:col-span-1 space-y-8">
                 
                 <DetailCard icon={<MessageSquare size={24} className="text-[#FEC925]" />} title="Live Chat">
@@ -325,17 +426,53 @@ const LeadDetailPage: React.FC = () => {
         )}
       </div>
 
+      {/* Modals */}
       {leadDetails && (
-        <RaiseDisputeModal
-          isOpen={isDisputeModalOpen}
-          onClose={() => setIsDisputeModalOpen(false)}
-          leadId={leadDetails.id}
-          leadNumber={leadDetails.lead_number}
-          onSuccess={handleDisputeSuccess}
-        />
+        <>
+          <RaiseDisputeModal
+            isOpen={isDisputeModalOpen}
+            onClose={() => setIsDisputeModalOpen(false)}
+            leadId={leadDetails.id}
+            leadNumber={leadDetails.lead_number}
+            onSuccess={handleActionSuccess}
+          />
+
+          <CancelLeadModal
+            isOpen={isCancelModalOpen}
+            onClose={() => setIsCancelModalOpen(false)}
+            leadId={leadDetails.id}
+            leadNumber={leadDetails.lead_number}
+            onSuccess={handleActionSuccess}
+          />
+
+          <RescheduleModal
+            isOpen={isRescheduleModalOpen}
+            onClose={() => setIsRescheduleModalOpen(false)}
+            leadId={leadDetails.id}
+            leadNumber={leadDetails.lead_number}
+            currentDate={leadDetails.preferred_date}
+            currentTimeSlot={leadDetails.preferred_time_slot}
+            onSuccess={handleActionSuccess}
+          />
+
+          {leadDetails.assigned_partner && (
+            <RateLeadModal
+              isOpen={isRateModalOpen}
+              onClose={() => setIsRateModalOpen(false)}
+              leadId={leadDetails.id}
+              leadNumber={leadDetails.lead_number}
+              partnerUserId={leadDetails.assigned_partner.user}
+              partnerName={leadDetails.assigned_partner.business_name}
+              onSuccess={() => {
+                setHasRated(true);
+                handleActionSuccess();
+              }}
+            />
+          )}
+        </>
       )}
     </section>
   );
 };
 
-export default LeadDetailPage;
+export default LeadDetailPageComplete;

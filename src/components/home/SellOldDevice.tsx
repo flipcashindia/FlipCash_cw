@@ -1,5 +1,7 @@
+// flipcash_cw/src/components/home/SellOldDevice.tsx
+
 import React, { useState, useEffect } from 'react';
-import { Search, ChevronRight, Star, TrendingUp, Smartphone, Loader2, Sparkles } from 'lucide-react';
+import { ChevronRight, Star, TrendingUp, Smartphone, Sparkles } from 'lucide-react';
 import * as catalogService from '../../api/services/catalogService';
 import { useImageCache } from '../../api/utils/imageCache';
 import type { Category, Brand, Model } from '../../api/types/catalog.types';
@@ -57,11 +59,11 @@ const SellOldDevice: React.FC = () => {
   
   const [selectedCategory, _setSelectedCategory] = useState<string | null>(null);
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  
+  // const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [_error, setError] = useState<string | null>(null);
-  const [searchLoading, setSearchLoading] = useState(false);
+  // const [searchLoading, setSearchLoading] = useState(false);
 
   // Fetch categories and featured models on mount
   useEffect(() => {
@@ -198,29 +200,29 @@ const SellOldDevice: React.FC = () => {
     }
   };
 
-  const handleSearch = async (query: string) => {
-    // ... (logic remains the same)
-    setSearchQuery(query);
+  // const handleSearch = async (query: string) => {
+  //   // ... (logic remains the same)
+  //   setSearchQuery(query);
     
-    if (query.length < 2) {
-      if (selectedCategory && selectedBrand) {
-        loadModels(selectedCategory, selectedBrand);
-      } else if (selectedCategory) {
-        loadFeaturedModelsForCategory(selectedCategory);
-      }
-      return;
-    }
+  //   if (query.length < 2) {
+  //     if (selectedCategory && selectedBrand) {
+  //       loadModels(selectedCategory, selectedBrand);
+  //     } else if (selectedCategory) {
+  //       loadFeaturedModelsForCategory(selectedCategory);
+  //     }
+  //     return;
+  //   }
 
-    try {
-      setSearchLoading(true);
-      const results = await catalogService.searchModels(query);
-      setModels(results.slice(0, 4));
-    } catch (err) {
-      console.error('Search error:', err);
-    } finally {
-      setSearchLoading(false);
-    }
-  };
+  //   try {
+  //     setSearchLoading(true);
+  //     const results = await catalogService.searchModels(query);
+  //     setModels(results.slice(0, 4));
+  //   } catch (err) {
+  //     console.error('Search error:', err);
+  //   } finally {
+  //     setSearchLoading(false);
+  //   }
+  // };
 
   // const resetSelection = () => {
   //   setSelectedCategory(null);
@@ -252,7 +254,7 @@ const SellOldDevice: React.FC = () => {
         </div>
 
         {/* Search Bar */}
-        <div className="max-w-2xl mx-auto mb-8">
+        {/* <div className="max-w-2xl mx-auto mb-8">
           <div className="relative group">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-teal-600 transition-colors" size={20} />
             <input
@@ -266,7 +268,7 @@ const SellOldDevice: React.FC = () => {
               <Loader2 className="absolute right-4 top-1/2 transform -translate-y-1/2 text-teal-600 animate-spin" size={20} />
             )}
           </div>
-        </div>
+        </div> */}
 
         {/* Breadcrumb & Error Message (Code remains the same) */}
         {/* ... */}
@@ -295,11 +297,11 @@ const SellOldDevice: React.FC = () => {
                     <h4 className="font-bold text-gray-800 mb-2 group-hover:text-teal-600 transition-colors">
                       {category.title}
                     </h4>
-                    {category.models_count !== undefined && (
+                    {/* {category.models_count !== undefined && (
                       <p className="text-sm text-gray-500">
                         {category.models_count} models
                       </p>
-                    )}
+                    )} */}
                     {category.is_featured && (
                       <div className="mt-2 flex items-center gap-1 text-yellow-600">
                         <Star size={14} fill="currentColor" />
