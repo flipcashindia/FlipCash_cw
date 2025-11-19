@@ -51,8 +51,8 @@ import FAQ from './components/home/FAQSection';
 import TermsOfUse from './components/pages/TermsOfUse';
 import CookiePolicy from './components/pages/CookiePolicy';
 import Career from './components/pages/Career';
-import DisputesList from './components/lead/Disputeslist';
-import DisputeDetail from './components/lead/Disputedetail';
+import DisputesList from './components/lead/DisputesList';
+import DisputeDetail from './components/lead/DisputeDetail';
 
 function Home() {
   return (
@@ -120,7 +120,7 @@ function AppRoutes() {
   };
 
   const handleLogout = () => {
-    console.log('User logged out');
+    // console.log('User logged out');
     navigate('/');
   };
 

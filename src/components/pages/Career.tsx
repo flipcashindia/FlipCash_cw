@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Briefcase, Users, TrendingUp, Heart, Gift, Coffee, MapPin, Clock, DollarSign, ChevronRight, Send, Mail, Phone } from 'lucide-react';
-import flipcashLogo from '../../../public/flipcash_header_logo.png';
+// import flipcashLogo from '../../../public/flipcash_header_logo.png';
 
 interface Job {
   id: number;
@@ -15,33 +15,33 @@ interface Job {
 }
 
 const jobListings: Job[] = [
-  {
-    id: 1,
-    title: "Full Stack Developer",
-    department: "Engineering",
-    location: "Gurugram, Haryana",
-    type: "Full-time",
-    experience: "2-4 years",
-    description: "Work on our Django + React Native stack to build innovative features for our re-commerce platform."
-  },
-  {
-    id: 2,
-    title: "Mobile App Developer (React Native)",
-    department: "Engineering",
-    location: "Gurugram, Haryana",
-    type: "Full-time",
-    experience: "3-5 years",
-    description: "Lead mobile app development for our customer and partner applications using React Native and Expo."
-  },
-  {
-    id: 3,
-    title: "Backend Engineer (Django)",
-    department: "Engineering",
-    location: "Gurugram, Haryana",
-    type: "Full-time",
-    experience: "2-5 years",
-    description: "Build scalable APIs and microservices to power our marketplace platform."
-  },
+  // {
+  //   id: 1,
+  //   title: "Full Stack Developer",
+  //   department: "Engineering",
+  //   location: "Gurugram, Haryana",
+  //   type: "Full-time",
+  //   experience: "2-4 years",
+  //   description: "Work on our Django + React Native stack to build innovative features for our re-commerce platform."
+  // },
+  // {
+  //   id: 2,
+  //   title: "Mobile App Developer (React Native)",
+  //   department: "Engineering",
+  //   location: "Gurugram, Haryana",
+  //   type: "Full-time",
+  //   experience: "3-5 years",
+  //   description: "Lead mobile app development for our customer and partner applications using React Native and Expo."
+  // },
+  // {
+  //   id: 3,
+  //   title: "Backend Engineer (Django)",
+  //   department: "Engineering",
+  //   location: "Gurugram, Haryana",
+  //   type: "Full-time",
+  //   experience: "2-5 years",
+  //   description: "Build scalable APIs and microservices to power our marketplace platform."
+  // },
   {
     id: 4,
     title: "Product Manager",
@@ -51,15 +51,15 @@ const jobListings: Job[] = [
     experience: "4-6 years",
     description: "Drive product strategy and roadmap for our re-commerce ecosystem."
   },
-  {
-    id: 5,
-    title: "UI/UX Designer",
-    department: "Design",
-    location: "Gurugram, Haryana",
-    type: "Full-time",
-    experience: "2-4 years",
-    description: "Create delightful user experiences across web and mobile platforms."
-  },
+  // {
+  //   id: 5,
+  //   title: "UI/UX Designer",
+  //   department: "Design",
+  //   location: "Gurugram, Haryana",
+  //   type: "Full-time",
+  //   experience: "2-4 years",
+  //   description: "Create delightful user experiences across web and mobile platforms."
+  // },
   {
     id: 6,
     title: "Digital Marketing Manager",
@@ -87,24 +87,24 @@ const jobListings: Job[] = [
     experience: "0-2 years",
     description: "Provide excellent support to our customers and partners."
   },
-  {
-    id: 9,
-    title: "Data Analyst",
-    department: "Analytics",
-    location: "Gurugram, Haryana",
-    type: "Full-time",
-    experience: "2-4 years",
-    description: "Analyze data to drive business insights and decision-making."
-  },
-  {
-    id: 10,
-    title: "DevOps Engineer",
-    department: "Engineering",
-    location: "Gurugram, Haryana",
-    type: "Full-time",
-    experience: "3-5 years",
-    description: "Manage cloud infrastructure, CI/CD pipelines, and ensure platform reliability."
-  }
+  // {
+  //   id: 9,
+  //   title: "Data Analyst",
+  //   department: "Analytics",
+  //   location: "Gurugram, Haryana",
+  //   type: "Full-time",
+  //   experience: "2-4 years",
+  //   description: "Analyze data to drive business insights and decision-making."
+  // },
+  // {
+  //   id: 10,
+  //   title: "DevOps Engineer",
+  //   department: "Engineering",
+  //   location: "Gurugram, Haryana",
+  //   type: "Full-time",
+  //   experience: "3-5 years",
+  //   description: "Manage cloud infrastructure, CI/CD pipelines, and ensure platform reliability."
+  // }
 ];
 
 const JobCard: React.FC<{ job: Job; onClick: () => void }> = ({ job, onClick }) => {
@@ -166,11 +166,11 @@ const Career: React.FC = () => {
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-[#FEC925] to-yellow-400 py-20">
         <div className="container mx-auto px-4 md:px-6 text-center">
-          <img 
+          {/* <img 
             src={flipcashLogo} 
             alt="Flipcash Logo" 
             className="w-48 h-24 mx-auto mb-8 rounded-lg" 
-          />
+          /> */}
           <h1 className="text-4xl md:text-6xl font-extrabold text-black mb-6">
             Join Our Team
           </h1>

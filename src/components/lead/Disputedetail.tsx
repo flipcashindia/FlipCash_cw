@@ -566,7 +566,7 @@ const DisputeDetail: React.FC = () => {
                 <p className="font-semibold text-lg text-[#1C1C1B]">#{dispute.lead_number}</p>
                 <p className="text-sm text-gray-600">Status: {formatStatus(dispute.lead_status)}</p>
                 <button
-                  onClick={() => navigate(`/lead/${dispute.lead}`)}
+                  onClick={() => navigate(`/leads/${dispute.lead}`)}
                   className="w-full mt-4 px-4 py-2 bg-[#FEC925] text-[#1C1C1B] rounded-lg font-semibold hover:bg-[#e5b520] transition"
                 >
                   View Lead Details

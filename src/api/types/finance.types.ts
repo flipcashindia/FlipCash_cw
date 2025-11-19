@@ -74,6 +74,7 @@ export interface CreatePayoutRequest {
   bank_name?: string;
   notes?: string;
   save_beneficiary?: boolean;
+  bank_account_id?:string;
 }
 
 export interface Beneficiary {

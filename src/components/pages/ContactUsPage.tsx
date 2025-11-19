@@ -2,11 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Phone, Mail, CheckCircle, AlertTriangle, X, Clock, Send, MessageCircle, Facebook, Instagram, Linkedin, Youtube, Info } from 'lucide-react';
-import flipcashLogo from '../../../public/flipcash_header_logo.png';
+// import flipcashLogo from '../../../public/flipcash_header_logo.png';
 import axios from 'axios';
 
 // API Configuration
-const API_BASE_URL = 'http://localhost:8000/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
 
 // Local Storage Key
 const CONTACT_SUBMISSION_KEY = 'flipcash_contact_submission';
@@ -489,14 +489,14 @@ const ContactUs: React.FC = () => {
           <div className="absolute bottom-10 right-10 w-96 h-96 bg-black rounded-full blur-3xl"></div>
         </div>
         <div className="container mx-auto px-4 md:px-6 text-center relative z-10">
-          <motion.img
+          {/* <motion.img
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
             src={flipcashLogo} 
             alt="Flipcash Logo" 
             className="w-48 h-24 mx-auto mb-8 rounded-lg" 
-          />
+          /> */}
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

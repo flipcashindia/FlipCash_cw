@@ -13,8 +13,8 @@ export interface User {
   is_active: boolean;
   is_phone_verified: boolean;
   is_email_verified: boolean;
-  kyc_status: 'pending' | 'submitted' | 'verified' | 'rejected';
   kyc_verified_at: string | null;
+  kyc_status?: 'pending' | 'submitted' | 'verified' | 'rejected';
   profile_completed: boolean;
   device_binding_id: string | null;
   last_login_ip: string | null;
@@ -22,6 +22,7 @@ export interface User {
   updated_at: string;
   last_login: string | null;
   profile_completion_percentage: number;
+  default_address?: UserAddress | null;
 }
 
 export interface UserAddress {

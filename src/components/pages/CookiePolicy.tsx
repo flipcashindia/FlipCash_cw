@@ -2,7 +2,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Cookie, Shield, Smartphone, Settings, Mail, Phone, MapPin } from 'lucide-react';
-import flipcashLogo from '../../../public/flipcash_header_logo.png';
+// import flipcashLogo from '../../../public/flipcash_header_logo.png';
 
 const CookiePolicy: React.FC = () => {
   const navigate = useNavigate();
@@ -13,12 +13,12 @@ const CookiePolicy: React.FC = () => {
       <section className="bg-gradient-to-br from-orange-900 to-orange-700 text-white py-16">
         <div className="container mx-auto px-4 md:px-6">
           <div className="flex items-center justify-center mb-6">
-            <img 
+            {/* <img 
               src={flipcashLogo} 
               alt="Flipcash Logo" 
               className="w-40 h-20 rounded-lg mr-4" 
             />
-            <Cookie className="w-16 h-16 text-[#FEC925]" />
+            <Cookie className="w-16 h-16 text-[#FEC925]" /> */}
           </div>
           <h1 className="text-4xl md:text-5xl font-extrabold text-center mb-4">
             Cookie Policy
