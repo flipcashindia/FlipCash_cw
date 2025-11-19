@@ -1,8 +1,8 @@
 // src/pages/FAQ.tsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronDown, Search, Phone, Mail, MessageCircle, HelpCircle } from 'lucide-react';
-import flipcashLogo from '../../../public/flipcash_header_logo.png';
+import { ChevronDown, Search, Phone, Mail, MessageCircle } from 'lucide-react';
+// import flipcashLogo from '../../../public/flipcash_header_logo.png';
 
 interface FAQItem {
   question: string;
@@ -193,14 +193,14 @@ const FAQ: React.FC = () => {
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-[#FEC925] to-yellow-400 py-16">
         <div className="container mx-auto px-4 md:px-6">
-          <div className="flex items-center justify-center mb-6">
+          {/* <div className="flex items-center justify-center mb-6">
             <img 
               src={flipcashLogo} 
               alt="Flipcash Logo" 
               className="w-40 h-20 rounded-lg mr-4" 
             />
             <HelpCircle className="w-16 h-16 text-black" />
-          </div>
+          </div> */}
           <h1 className="text-4xl md:text-5xl font-extrabold text-center mb-4 text-black">
             Frequently Asked Questions
           </h1>

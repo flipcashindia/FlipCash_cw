@@ -1,49 +1,67 @@
-// src/pages/leads/LeadDetailPageComplete.tsx
+// src/pages/leads/LeadDetailComplete.tsx - FULL VERSION
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { 
-  ArrowLeft, 
-  Loader2,
-  AlertTriangle,
-  X,
-  Package,
-  Wallet,
-  MapPin,
-  User,
-  Shield,
-  CheckCircle,
-  Tag,
-  MessageSquare,
-  Activity,
-  Calendar,
-  XCircle,
-  Star
+  ArrowLeft, Loader2, AlertTriangle, X, Package, Wallet, MapPin, User, Shield, CheckCircle,
+  Tag, MessageSquare, Activity, Calendar, XCircle, Star, ThumbsUp, ThumbsDown, 
+  DollarSign, Clock, MessageCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// Import modals and components
-import LeadStatusHistory from '../lead/LeadStatusHistory';
-import LeadChat from '../lead/LeadChat';
+// Import components
+import LeadStatusHistory from '../../components/lead/LeadStatusHistory';
+import LeadChat from '../../components/lead/LeadChat';
 import RaiseDisputeModal from '../../components/lead/RaiseDisputeModal';
-import CancelLeadModal from '../../components/lead/Cancelleadmodal';
-import RescheduleModal from '../../components/lead/Reschedulemodal';
-import RateLeadModal from '../../components/lead/Rateleadmodal';
-import LeadDisputesSection from '../../components/lead/Leaddisputessection';
+import CancelLeadModal from '../lead/CancelLeadModal';
+import RescheduleModal from '../lead/RescheduleModal';
+import RateLeadModal from '../lead/RateLeadModal';
+import LeadDisputesSection from '../lead/LeadDisputesSection';
 
-// API Configuration
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
 
 // Interfaces
-interface DeviceModel { 
-  id: string;
-  name: string;
-}
-
+interface DeviceModel { id: string; name: string; }
 interface LeadUser { id: string; phone: string; name: string; email: string; }
-interface Partner { id: string; user: string; business_name: string; contact_person: string; phone: string; rating_average: string; total_leads_completed: number; }
-interface PickupAddress { id: string; address_line1: string; address_line2?: string; city: string; state: string; pincode: string; landmark?: string; }
+interface Partner { 
+  id: string; 
+  user: string; 
+  business_name: string; 
+  contact_person: string; 
+  phone: string; 
+  rating_average: string; 
+  total_leads_completed: number; 
+}
+interface PickupAddress { 
+  id: string; 
+  address_line1: string; 
+  address_line2?: string; 
+  city: string; 
+  state: string; 
+  pincode: string; 
+  landmark?: string; 
+}
 interface DevicePhoto { url: string; description: string; }
-interface LatestOffer { id: string; partner_offered_price: string; message: string; status: string; created_at: string; }
+
+interface LeadOffer {
+  id: string;
+  lead: string;
+  lead_number: string;
+  partner: string;
+  partner_name: string;
+  system_calculated_price: string;
+  partner_offered_price: string;
+  price_deviation_percentage: string;
+  partner_notes: string;
+  inspection_findings: string;
+  inspection_photos: string[];
+  status: string;
+  status_display: string;
+  customer_response: string;
+  is_expired: boolean;
+  created_at: string;
+  expires_at: string;
+  responded_at: string | null;
+}
 
 interface LeadDetail {
   id: string;
@@ -67,72 +85,56 @@ interface LeadDetail {
   preferred_date: string;
   preferred_time_slot: string;
   customer_notes: string;
-  latest_offer: LatestOffer | null;
   created_at: string;
 }
 
-// Helper Components
-interface ErrorDisplayProps { message: string; onDismiss: () => void; }
-const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ message, onDismiss }) => (
-  <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="mb-6 p-4 bg-[#FF0000]/10 border-2 border-[#FF0000] rounded-xl flex items-center justify-between">
-    <div className="flex items-center gap-3"><AlertTriangle className="text-[#FF0000] flex-shrink-0" size={24} /><p className="font-semibold text-[#1C1C1B]">{message}</p></div>
-    <button onClick={onDismiss} className="text-[#FF0000] hover:opacity-70"><X size={20} /></button>
-  </motion.div>
-);
-
-interface DetailCardProps { icon: React.ReactNode; title: string; children: React.ReactNode; }
-const DetailCard: React.FC<DetailCardProps> = ({ icon, title, children }) => (
-  <div className="bg-white p-6 rounded-2xl shadow-xl border-2 border-[#FEC925]/20 hover:shadow-2xl transition-shadow">
-    <div className="flex items-center gap-3 mb-6">
-      <div className="w-12 h-12 bg-[#FEC925]/20 rounded-full flex items-center justify-center flex-shrink-0">{icon}</div>
-      <h3 className="font-bold text-2xl text-[#1C1C1B]">{title}</h3>
-    </div>
-    <div className="space-y-3">{children}</div>
-  </div>
-);
-
-interface DetailRowProps { label: string; value: string | number | null; }
-const DetailRow: React.FC<DetailRowProps> = ({ label, value }) => (
-  <div className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
-    <span className="font-semibold text-gray-600">{label}:</span>
-    <span className="font-bold text-[#1C1C1B] text-right">{value || 'N/A'}</span>
-  </div>
-);
-
-const renderStatusBadge = (status: string) => {
-  let colorClasses = "bg-gray-200 text-gray-800";
-  if (status.includes("Completed") || status.includes("Accepted")) colorClasses = "bg-[#1B8A05]/20 text-[#1B8A05]";
-  else if (status.includes("Booked") || status.includes("Pending") || status.includes("Assigned")) colorClasses = "bg-[#FEC925]/20 text-[#b48f00]";
-  else if (status.includes("Cancelled") || status.includes("Rejected")) colorClasses = "bg-[#FF0000]/10 text-[#FF0000]";
-  return (<span className={`px-4 py-1.5 rounded-full text-sm font-bold ${colorClasses}`}>{status}</span>);
+// Status badges
+const STATUS_COLORS: Record<string, string> = {
+  'booked': 'bg-blue-100 text-blue-800',
+  'partner_assigned': 'bg-[#FEC925]/20 text-[#b48f00]',
+  'en_route': 'bg-purple-100 text-purple-800',
+  'checked_in': 'bg-indigo-100 text-indigo-800',
+  'inspecting': 'bg-orange-100 text-orange-800',
+  'offer_made': 'bg-[#FEC925]/30 text-[#b48f00]',
+  'negotiating': 'bg-yellow-100 text-yellow-800',
+  'accepted': 'bg-[#1B8A05]/20 text-[#1B8A05]',
+  'payment_processing': 'bg-cyan-100 text-cyan-800',
+  'completed': 'bg-[#1B8A05]/30 text-[#1B8A05]',
+  'cancelled': 'bg-[#FF0000]/10 text-[#FF0000]',
+  'disputed': 'bg-red-100 text-red-800',
+  'expired': 'bg-gray-200 text-gray-600'
 };
 
-const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-
-// Main Component
-const LeadDetailPageComplete: React.FC = () => {
+const LeadDetailComplete: React.FC = () => {
   const navigate = useNavigate();
   const { leadId } = useParams<{ leadId: string }>();
 
   const [leadDetails, setLeadDetails] = useState<LeadDetail | null>(null);
+  const [offers, setOffers] = useState<LeadOffer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingOffers, setLoadingOffers] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasRated, setHasRated] = useState(false);
-  const [checkingRating, setCheckingRating] = useState(false);
   
   // Modal states
   const [isDisputeModalOpen, setIsDisputeModalOpen] = useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [isRescheduleModalOpen, setIsRescheduleModalOpen] = useState(false);
   const [isRateModalOpen, setIsRateModalOpen] = useState(false);
+  const [isCounterModalOpen, setIsCounterModalOpen] = useState(false);
+  const [selectedOffer, setSelectedOffer] = useState<LeadOffer | null>(null);
+  const [counterPrice, setCounterPrice] = useState('');
+  const [counterNotes, setCounterNotes] = useState('');
+  const [respondingToOffer, setRespondingToOffer] = useState(false);
 
   useEffect(() => {
     if (!leadId) {
-      setError("No lead ID provided in the URL.");
+      setError("No lead ID provided");
       setLoading(false);
       return;
     }
     loadLeadDetails(leadId);
+    loadOffers(leadId);
   }, [leadId]);
 
   const loadLeadDetails = async (id: string) => {
@@ -140,82 +142,160 @@ const LeadDetailPageComplete: React.FC = () => {
       setLoading(true);
       setError(null);
       const token = localStorage.getItem('access_token');
-      if (!token) {
-        setError("You must be logged in to view this page.");
-        setLoading(false);
-        return;
-      }
+      if (!token) throw new Error("Authentication required");
+
       const res = await fetch(`${API_BASE_URL}/leads/leads/${id}/`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+
       if (!res.ok) {
-        if (res.status === 404) throw new Error("Lead not found.");
-        if (res.status === 401 || res.status === 403) throw new Error("You are not authorized to view this lead.");
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || `An error occurred (${res.status})`);
+        if (res.status === 404) throw new Error("Lead not found");
+        throw new Error("Failed to load lead details");
       }
+
       const data: LeadDetail = await res.json();
       setLeadDetails(data);
       
-      // Check if lead is completed and check rating status
+      // Check rating status for completed leads
       if (data.status === 'completed' && data.assigned_partner) {
-        checkRatingStatus(id, data.assigned_partner.user);
+        checkRatingStatus(id);
       }
-    } catch (error: any) {
-      console.error('Failed to load lead details:', error);
-      setError(error.message);
+    } catch (err: any) {
+      console.error('Failed to load lead:', err);
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const checkRatingStatus = async (leadId: string, _partnerUserId: string) => {
+  const loadOffers = async (id: string) => {
     try {
-      setCheckingRating(true);
+      setLoadingOffers(true);
       const token = localStorage.getItem('access_token');
       if (!token) return;
 
-      // Check if user has already rated this lead
-      const res = await fetch(`${API_BASE_URL}/ops/ratings/?lead=${leadId}&rater=${localStorage.getItem('user_id')}`, {
+      const res = await fetch(`${API_BASE_URL}/leads/offers/?lead=${id}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      console.log('offere response : ', res)
+
+      if (res.ok) {
+        const data = await res.json();
+        console.log('offer data : ', data)
+        setOffers(data.results || data || []);
+      }
+    } catch (err) {
+      console.error('Failed to load offers:', err);
+    } finally {
+      setLoadingOffers(false);
+    }
+  };
+
+  const checkRatingStatus = async (leadId: string) => {
+    try {
+      const token = localStorage.getItem('access_token');
+      if (!token) return;
+
+      const userId = localStorage.getItem('user_id');
+      const res = await fetch(`${API_BASE_URL}/ops/ratings/?lead=${leadId}&rater=${userId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
       if (res.ok) {
         const data = await res.json();
-        const ratings = data.results || data;
-        setHasRated(ratings.length > 0);
+        setHasRated((data.results || data || []).length > 0);
       }
     } catch (err) {
-      console.error('Failed to check rating status:', err);
+      console.error('Failed to check rating:', err);
+    }
+  };
+
+  const handleOfferResponse = async (offerId: string, action: 'accept' | 'reject' | 'counter') => {
+    try {
+      setRespondingToOffer(true);
+      setError(null);
+
+      const token = localStorage.getItem('access_token');
+      if (!token) throw new Error('Authentication required');
+
+      const payload: any = {
+        offer_id: offerId,
+        action: action
+      };
+
+      if (action === 'counter') {
+        if (!counterPrice || parseFloat(counterPrice) <= 0) {
+          throw new Error('Please enter a valid counter price');
+        }
+        payload.counter_price = parseFloat(counterPrice);
+        payload.response_notes = counterNotes.trim();
+      }
+
+      console.log('📤 Responding to offer:', payload);
+
+      const res = await fetch(`${API_BASE_URL}/offers/${offerId}/respond/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || err.error || 'Failed to respond to offer');
+      }
+
+      console.log('✅ Offer response successful');
+
+      // Refresh data
+      if (leadId) {
+        await loadLeadDetails(leadId);
+        await loadOffers(leadId);
+      }
+
+      // Close counter modal
+      setIsCounterModalOpen(false);
+      setSelectedOffer(null);
+      setCounterPrice('');
+      setCounterNotes('');
+
+    } catch (err: any) {
+      console.error('❌ Offer response error:', err);
+      setError(err.message);
     } finally {
-      setCheckingRating(false);
+      setRespondingToOffer(false);
     }
   };
 
-  const handleActionSuccess = () => {
-    if (leadId) {
-      loadLeadDetails(leadId);
-    }
+  const openCounterModal = (offer: LeadOffer) => {
+    setSelectedOffer(offer);
+    const minPrice = Math.min(parseFloat(offer.system_calculated_price), parseFloat(offer.partner_offered_price));
+    const maxPrice = Math.max(parseFloat(offer.system_calculated_price), parseFloat(offer.partner_offered_price));
+    const suggestedPrice = Math.round((minPrice + maxPrice) / 2);
+    setCounterPrice(suggestedPrice.toString());
+    setIsCounterModalOpen(true);
   };
 
-  const canCancelOrReschedule = (status: string): boolean => {
-    const nonCancellableStatuses = ['completed', 'cancelled', 'payment_processing', 'disputed'];
-    return !nonCancellableStatuses.includes(status.toLowerCase());
+  const formatCurrency = (value: string | number): string => {
+    return `₹${parseFloat(value.toString()).toLocaleString('en-IN')}`;
   };
 
-  const shouldShowRateButton = (): boolean => {
-    return (
-      leadDetails?.status === 'completed' &&
-      leadDetails?.assigned_partner !== null &&
-      !hasRated &&
-      !checkingRating
-    );
+  const formatDate = (dateString: string): string => {
+    return new Date(dateString).toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#F0F7F6] via-white to-[#EAF6F4]">
-        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center">
           <Loader2 className="animate-spin text-[#FEC925] mx-auto mb-4" size={64} />
           <p className="text-[#1C1C1B] text-xl font-semibold">Loading Lead Details...</p>
         </motion.div>
@@ -223,207 +303,486 @@ const LeadDetailPageComplete: React.FC = () => {
     );
   }
 
+  if (!leadDetails) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#F0F7F6] via-white to-[#EAF6F4] p-4">
+        <div className="bg-white p-8 rounded-2xl shadow-xl text-center">
+          <AlertTriangle className="text-[#FF0000] mx-auto mb-4" size={64} />
+          <h2 className="text-2xl font-bold text-[#1C1C1B] mb-2">Error</h2>
+          <p className="text-gray-600 mb-6">{error || 'Lead not found'}</p>
+          <button
+            onClick={() => navigate('/leads')}
+            className="px-6 py-3 bg-[#FEC925] text-[#1C1C1B] rounded-xl font-bold hover:bg-[#e5b520]"
+          >
+            Back to Leads
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const canReschedule = !['completed', 'cancelled', 'payment_processing', 'disputed'].includes(leadDetails.status);
+  const canCancel = !['completed', 'cancelled', 'payment_processing'].includes(leadDetails.status);
+  const showRateButton = leadDetails.status === 'completed' && leadDetails.assigned_partner && !hasRated;
+
   return (
     <section className="min-h-screen bg-gradient-to-br from-[#F0F7F6] via-white to-[#EAF6F4] py-8 md:py-12">
       <div className="container mx-auto px-4 max-w-7xl">
         
+        {/* Back Button */}
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-          <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-[#1C1C1B] hover:text-[#FEC925] transition mb-6 font-semibold">
+          <button 
+            onClick={() => navigate('/leads')} 
+            className="flex items-center gap-2 text-[#1C1C1B] hover:text-[#FEC925] transition font-semibold"
+          >
             <ArrowLeft size={24} />
             Back to Leads
           </button>
         </motion.div>
 
+        {/* Error Display */}
         <AnimatePresence>
           {error && (
-            <ErrorDisplay message={error} onDismiss={() => setError(null)} />
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="mb-6 p-4 bg-[#FF0000]/10 border-2 border-[#FF0000] rounded-xl flex items-center justify-between"
+            >
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="text-[#FF0000]" size={24} />
+                <p className="font-semibold text-[#1C1C1B]">{error}</p>
+              </div>
+              <button onClick={() => setError(null)} className="text-[#FF0000]">
+                <X size={20} />
+              </button>
+            </motion.div>
           )}
         </AnimatePresence>
 
-        {leadDetails && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            {/* Top Info Bar */}
-            <div className="bg-white p-6 rounded-2xl shadow-xl border-2 border-[#FEC925]/20 mb-8">
-              <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-                {/* Lead Info */}
-                <div className="flex-1">
-                  <h2 className="text-3xl font-bold text-[#1C1C1B] mb-1">
-                    Lead #{leadDetails.lead_number}
-                  </h2>
-                  <p className="text-gray-600">
-                    Created on: {new Date(leadDetails.created_at).toLocaleDateString('en-IN', {
-                      day: 'numeric', month: 'long', year: 'numeric'
-                    })}
-                  </p>
-                </div>
-                
-                {/* Status & Actions */}
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
-                  {renderStatusBadge(leadDetails.status_display)}
-                  
-                  {/* Rate Button - Only show for completed leads that haven't been rated */}
-                  {shouldShowRateButton() && (
-                    <button 
-                      onClick={() => setIsRateModalOpen(true)}
-                      className="flex-1 sm:flex-none px-4 py-2 bg-[#1B8A05] text-white rounded-lg font-bold flex items-center justify-center gap-2 hover:bg-[#156d04] transition-all shadow-lg"
-                    >
-                      <Star size={16} />
-                      Rate Service
-                    </button>
-                  )}
+        {/* Header Section */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+          <div className="bg-white p-6 rounded-2xl shadow-xl border-2 border-[#FEC925]/20 mb-8">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+              <div className="flex-1">
+                <h2 className="text-3xl font-bold text-[#1C1C1B] mb-2">
+                  Lead #{leadDetails.lead_number}
+                </h2>
+                <p className="text-gray-600">
+                  Created: {formatDate(leadDetails.created_at)}
+                </p>
+              </div>
+              
+              {/* Actions */}
+              <div className="flex flex-wrap items-center gap-3">
+                <span className={`px-4 py-2 rounded-full text-sm font-bold ${STATUS_COLORS[leadDetails.status] || 'bg-gray-200 text-gray-800'}`}>
+                  {leadDetails.status_display}
+                </span>
 
-                  {/* Show rating status if already rated */}
-                  {leadDetails.status === 'completed' && hasRated && (
-                    <div className="flex-1 sm:flex-none px-4 py-2 bg-[#1B8A05]/20 text-[#1B8A05] rounded-lg font-bold flex items-center justify-center gap-2">
-                      <CheckCircle size={16} />
-                      Rated
-                    </div>
-                  )}
-                  
-                  {canCancelOrReschedule(leadDetails.status) && (
-                    <div className="flex gap-3">
-                      {/* Reschedule Button */}
-                      <button 
-                        onClick={() => setIsRescheduleModalOpen(true)}
-                        className="flex-1 sm:flex-none px-4 py-2 bg-[#FEC925]/20 text-[#1C1C1B] rounded-lg font-bold flex items-center justify-center gap-2 hover:bg-[#FEC925] transition-all"
-                      >
-                        <Calendar size={16} />
-                        Reschedule
-                      </button>
-                      
-                      {/* Cancel Button */}
-                      <button 
-                        onClick={() => setIsCancelModalOpen(true)}
-                        className="flex-1 sm:flex-none px-4 py-2 bg-[#FF0000]/10 text-[#FF0000] rounded-lg font-bold flex items-center justify-center gap-2 hover:bg-[#FF0000] hover:text-white transition-all"
-                      >
-                        <XCircle size={16} />
-                        Cancel
-                      </button>
-                    </div>
-                  )}
-                  
-                  {/* Report Issue Button */}
-                  {leadDetails.status !== 'cancelled' && leadDetails.status !== 'completed' && (
-                    <button 
-                      onClick={() => setIsDisputeModalOpen(true)}
-                      className="flex-1 sm:flex-none px-4 py-2 bg-[#FF0000]/10 text-[#FF0000] rounded-lg font-bold flex items-center justify-center gap-2 hover:bg-[#FF0000] hover:text-white transition-all"
-                    >
-                      <AlertTriangle size={16} />
-                      Report Issue
-                    </button>
-                  )}
-                </div>
+                {showRateButton && (
+                  <button 
+                    onClick={() => setIsRateModalOpen(true)}
+                    className="px-4 py-2 bg-[#1B8A05] text-white rounded-lg font-bold hover:bg-[#156d04] transition flex items-center gap-2"
+                  >
+                    <Star size={16} />
+                    Rate Service
+                  </button>
+                )}
+
+                {leadDetails.status === 'completed' && hasRated && (
+                  <div className="px-4 py-2 bg-[#1B8A05]/20 text-[#1B8A05] rounded-lg font-bold flex items-center gap-2">
+                    <CheckCircle size={16} />
+                    Rated
+                  </div>
+                )}
+
+                {canReschedule && (
+                  <button 
+                    onClick={() => setIsRescheduleModalOpen(true)}
+                    className="px-4 py-2 bg-[#FEC925]/20 text-[#1C1C1B] rounded-lg font-bold hover:bg-[#FEC925] transition flex items-center gap-2"
+                  >
+                    <Calendar size={16} />
+                    Reschedule
+                  </button>
+                )}
+
+                {canCancel && (
+                  <button 
+                    onClick={() => setIsCancelModalOpen(true)}
+                    className="px-4 py-2 bg-[#FF0000]/10 text-[#FF0000] rounded-lg font-bold hover:bg-[#FF0000] hover:text-white transition flex items-center gap-2"
+                  >
+                    <XCircle size={16} />
+                    Cancel
+                  </button>
+                )}
+
+                {!['cancelled', 'completed'].includes(leadDetails.status) && (
+                  <button 
+                    onClick={() => setIsDisputeModalOpen(true)}
+                    className="px-4 py-2 bg-[#FF0000]/10 text-[#FF0000] rounded-lg font-bold hover:bg-[#FF0000] hover:text-white transition flex items-center gap-2"
+                  >
+                    <AlertTriangle size={16} />
+                    Report Issue
+                  </button>
+                )}
               </div>
             </div>
+          </div>
 
-            {/* Main Details Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Offers Section - PROMINENT DISPLAY */}
+          {(loadingOffers || offers.length > 0 || ['offer_made', 'negotiating'].includes(leadDetails.status)) && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="mb-8"
+            >
+              <div className="bg-gradient-to-r from-[#FEC925]/20 to-[#1B8A05]/20 p-6 rounded-2xl shadow-xl border-2 border-[#FEC925]">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 bg-[#FEC925] rounded-full flex items-center justify-center">
+                    <DollarSign className="text-[#1C1C1B]" size={24} />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-[#1C1C1B]">Price Offers</h3>
+                    <p className="text-gray-600">Review and respond to partner offers</p>
+                  </div>
+                </div>
+
+                {loadingOffers ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="animate-spin text-[#FEC925]" size={32} />
+                  </div>
+                ) : offers.length === 0 ? (
+                  <div className="bg-white p-6 rounded-xl text-center">
+                    <Clock className="text-gray-300 mx-auto mb-3" size={48} />
+                    <p className="text-gray-600 font-semibold">No offers yet</p>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Partner will make an offer after device inspection
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {offers.map((offer, index) => (
+                      <motion.div
+                        key={offer.id}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        className="bg-white p-6 rounded-xl border-2 border-gray-200 shadow-lg"
+                      >
+                        <div className="flex flex-col md:flex-row justify-between gap-6">
+                          {/* Offer Details */}
+                          <div className="flex-1 space-y-4">
+                            <div className="flex items-center justify-between">
+                              <h4 className="text-lg font-bold text-[#1C1C1B]">
+                                Offer from {offer.partner_name}
+                              </h4>
+                              <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                                offer.status === 'pending' ? 'bg-[#FEC925]/20 text-[#b48f00]' :
+                                offer.status === 'accepted' ? 'bg-[#1B8A05]/20 text-[#1B8A05]' :
+                                offer.status === 'rejected' ? 'bg-[#FF0000]/10 text-[#FF0000]' :
+                                'bg-gray-200 text-gray-600'
+                              }`}>
+                                {offer.status_display}
+                              </span>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <p className="text-sm text-gray-600">System Price</p>
+                                <p className="text-xl font-bold text-gray-800">
+                                  {formatCurrency(offer.system_calculated_price)}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-sm text-gray-600">Partner Offer</p>
+                                <p className="text-xl font-bold text-[#1B8A05]">
+                                  {formatCurrency(offer.partner_offered_price)}
+                                </p>
+                              </div>
+                            </div>
+
+                            {offer.partner_notes && (
+                              <div className="bg-gray-50 p-3 rounded-lg">
+                                <p className="text-sm font-semibold text-gray-700 mb-1">Partner Notes:</p>
+                                <p className="text-sm text-gray-600 italic">"{offer.partner_notes}"</p>
+                              </div>
+                            )}
+
+                            {offer.inspection_findings && (
+                              <div className="bg-blue-50 p-3 rounded-lg">
+                                <p className="text-sm font-semibold text-gray-700 mb-1">Inspection Findings:</p>
+                                <p className="text-sm text-gray-600">{offer.inspection_findings}</p>
+                              </div>
+                            )}
+
+                            {offer.inspection_photos && offer.inspection_photos.length > 0 && (
+                              <div>
+                                <p className="text-sm font-semibold text-gray-700 mb-2">Inspection Photos:</p>
+                                <div className="flex gap-2 flex-wrap">
+                                  {offer.inspection_photos.map((photo, idx) => (
+                                    <a 
+                                      key={idx} 
+                                      href={photo} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer"
+                                      className="group"
+                                    >
+                                      <img 
+                                        src={photo} 
+                                        alt={`Inspection ${idx + 1}`} 
+                                        className="w-20 h-20 object-cover rounded-lg border-2 border-gray-200 group-hover:border-[#FEC925] transition"
+                                      />
+                                    </a>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            <div className="flex items-center gap-4 text-xs text-gray-500">
+                              <span>Offered: {formatDate(offer.created_at)}</span>
+                              {offer.expires_at && (
+                                <span className={offer.is_expired ? 'text-[#FF0000]' : ''}>
+                                  Expires: {formatDate(offer.expires_at)}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Action Buttons */}
+                          {offer.status === 'pending' && !offer.is_expired && (
+                            <div className="flex flex-col gap-3 md:min-w-[200px]">
+                              <button
+                                onClick={() => handleOfferResponse(offer.id, 'accept')}
+                                disabled={respondingToOffer}
+                                className="flex items-center justify-center gap-2 px-4 py-3 bg-[#1B8A05] text-white rounded-lg font-bold hover:bg-[#156d04] transition disabled:opacity-50"
+                              >
+                                {respondingToOffer ? (
+                                  <Loader2 className="animate-spin" size={20} />
+                                ) : (
+                                  <>
+                                    <ThumbsUp size={20} />
+                                    Accept
+                                  </>
+                                )}
+                              </button>
+
+                              <button
+                                onClick={() => openCounterModal(offer)}
+                                disabled={respondingToOffer}
+                                className="flex items-center justify-center gap-2 px-4 py-3 bg-[#FEC925] text-[#1C1C1B] rounded-lg font-bold hover:bg-[#e5b520] transition disabled:opacity-50"
+                              >
+                                <MessageCircle size={20} />
+                                Counter Offer
+                              </button>
+
+                              <button
+                                onClick={() => handleOfferResponse(offer.id, 'reject')}
+                                disabled={respondingToOffer}
+                                className="flex items-center justify-center gap-2 px-4 py-3 bg-[#FF0000]/10 text-[#FF0000] border-2 border-[#FF0000] rounded-lg font-bold hover:bg-[#FF0000] hover:text-white transition disabled:opacity-50"
+                              >
+                                <ThumbsDown size={20} />
+                                Reject
+                              </button>
+                            </div>
+                          )}
+
+                          {offer.status !== 'pending' && (
+                            <div className="md:min-w-[200px] flex items-center justify-center">
+                              <div className="text-center">
+                                <p className="text-sm text-gray-600 mb-2">Response</p>
+                                {offer.responded_at && (
+                                  <p className="text-xs text-gray-500">
+                                    {formatDate(offer.responded_at)}
+                                  </p>
+                                )}
+                                {offer.customer_response && (
+                                  <p className="text-sm text-gray-700 italic mt-2">
+                                    "{offer.customer_response}"
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+
+          {/* Main Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            {/* Left Column */}
+            <div className="lg:col-span-2 space-y-8">
               
-              {/* Main Content (Left Column) */}
-              <div className="lg:col-span-2 space-y-8">
-                
-                <DetailCard icon={<Package size={24} className="text-[#FEC925]" />} title="Device Details">
+              {/* Device Details */}
+              <div className="bg-white p-6 rounded-2xl shadow-xl border-2 border-[#FEC925]/20">
+                <div className="flex items-center gap-3 mb-6">
+                  <Package className="text-[#FEC925]" size={24} />
+                  <h3 className="text-2xl font-bold text-[#1C1C1B]">Device Details</h3>
+                </div>
+                <div className="space-y-3">
                   <DetailRow label="Device" value={`${leadDetails.brand_name} ${leadDetails.device_model.name}`} />
                   <DetailRow label="Storage" value={leadDetails.storage} />
                   <DetailRow label="RAM" value={leadDetails.ram} />
                   <DetailRow label="Color" value={leadDetails.color} />
                   <DetailRow label="IMEI" value={leadDetails.imei_primary} />
-                </DetailCard>
+                </div>
+              </div>
 
-                <DetailCard icon={<Wallet size={24} className="text-[#FEC925]" />} title="Price Details">
-                  <DetailRow label="Estimated Price" value={`₹${parseFloat(leadDetails.estimated_price).toLocaleString('en-IN')}`} />
-                  <DetailRow label="Quoted Price" value={leadDetails.quoted_price ? `₹${parseFloat(leadDetails.quoted_price).toLocaleString('en-IN')}` : 'Pending'} />
-                  <DetailRow label="Final Price" value={leadDetails.final_price ? `₹${parseFloat(leadDetails.final_price).toLocaleString('en-IN')}` : 'Pending'} />
-                  {leadDetails.latest_offer && (
-                    <div className="bg-[#EEEFFF] p-4 rounded-lg border-l-4 border-[#FEC925]">
-                      <p className="font-bold text-lg text-[#1C1C1B]">Latest Offer: ₹{parseFloat(leadDetails.latest_offer.partner_offered_price).toLocaleString('en-IN')}</p>
-                      <p className="text-gray-700 italic">"{leadDetails.latest_offer.message}"</p>
-                      <p className="text-sm font-semibold mt-2">Status: <span className="text-[#1B8A05]">{leadDetails.latest_offer.status}</span></p>
-                    </div>
-                  )}
-                </DetailCard>
+              {/* Price Details */}
+              <div className="bg-white p-6 rounded-2xl shadow-xl border-2 border-[#FEC925]/20">
+                <div className="flex items-center gap-3 mb-6">
+                  <Wallet className="text-[#FEC925]" size={24} />
+                  <h3 className="text-2xl font-bold text-[#1C1C1B]">Price Details</h3>
+                </div>
+                <div className="space-y-3">
+                  <DetailRow label="Estimated Price" value={formatCurrency(leadDetails.estimated_price)} />
+                  <DetailRow label="Quoted Price" value={leadDetails.quoted_price ? formatCurrency(leadDetails.quoted_price) : 'Pending'} />
+                  <DetailRow label="Final Price" value={leadDetails.final_price ? formatCurrency(leadDetails.final_price) : 'Pending'} />
+                </div>
+              </div>
 
-                <DetailCard icon={<CheckCircle size={24} className="text-[#FEC925]" />} title="Condition Report">
+              {/* Condition Report */}
+              <div className="bg-white p-6 rounded-2xl shadow-xl border-2 border-[#FEC925]/20">
+                <div className="flex items-center gap-3 mb-6">
+                  <CheckCircle className="text-[#FEC925]" size={24} />
+                  <h3 className="text-2xl font-bold text-[#1C1C1B]">Condition Report</h3>
+                </div>
+                <div className="space-y-3">
                   {Object.entries(leadDetails.condition_responses).map(([key, value]) => (
-                    <DetailRow key={key} label={capitalize(key.replace(/_/g, ' '))} value={Array.isArray(value) ? value.join(', ') : String(value)} />
+                    <DetailRow 
+                      key={key} 
+                      label={key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} 
+                      value={Array.isArray(value) ? value.join(', ') : String(value)} 
+                    />
                   ))}
-                </DetailCard>
+                </div>
+              </div>
 
-                <DetailCard icon={<Tag size={24} className="text-[#FEC925]" />} title="Device Photos">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {leadDetails.device_photos.length > 0 ? leadDetails.device_photos.map((photo, idx) => (
-                      <a key={idx} href={photo.url} target="_blank" rel="noopener noreferrer" className="aspect-square group">
-                        <img src={photo.url} alt={photo.description || `Device photo ${idx + 1}`} className="w-full h-full object-cover rounded-lg border-2 border-gray-200 group-hover:border-[#FEC925] transition" />
+              {/* Device Photos */}
+              <div className="bg-white p-6 rounded-2xl shadow-xl border-2 border-[#FEC925]/20">
+                <div className="flex items-center gap-3 mb-6">
+                  <Tag className="text-[#FEC925]" size={24} />
+                  <h3 className="text-2xl font-bold text-[#1C1C1B]">Device Photos</h3>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {leadDetails.device_photos.length > 0 ? (
+                    leadDetails.device_photos.map((photo, idx) => (
+                      <a key={idx} href={photo.url} target="_blank" rel="noopener noreferrer" className="group">
+                        <img 
+                          src={photo.url} 
+                          alt={photo.description || `Device ${idx + 1}`} 
+                          className="w-full aspect-square object-cover rounded-lg border-2 border-gray-200 group-hover:border-[#FEC925] transition"
+                        />
                       </a>
-                    )) : (
-                      <p className="text-gray-500 col-span-full">No photos were uploaded for this lead.</p>
-                    )}
-                  </div>
-                </DetailCard>
-                
-                <DetailCard icon={<MapPin size={24} className="text-[#FEC925]" />} title="Pickup Details">
-                  <p className="font-bold text-lg text-[#1C1C1B]">{leadDetails.pickup_address.address_line1}</p>
+                    ))
+                  ) : (
+                    <p className="text-gray-500 col-span-full">No photos uploaded</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Pickup Details */}
+              <div className="bg-white p-6 rounded-2xl shadow-xl border-2 border-[#FEC925]/20">
+                <div className="flex items-center gap-3 mb-6">
+                  <MapPin className="text-[#FEC925]" size={24} />
+                  <h3 className="text-2xl font-bold text-[#1C1C1B]">Pickup Details</h3>
+                </div>
+                <div className="space-y-3">
+                  <p className="font-bold text-lg">{leadDetails.pickup_address.address_line1}</p>
                   {leadDetails.pickup_address.address_line2 && <p className="text-gray-700">{leadDetails.pickup_address.address_line2}</p>}
                   {leadDetails.pickup_address.landmark && <p className="text-sm text-gray-600">Landmark: {leadDetails.pickup_address.landmark}</p>}
-                  <p className="text-gray-700 font-semibold">{leadDetails.pickup_address.city}, {leadDetails.pickup_address.state} - {leadDetails.pickup_address.pincode}</p>
-                  <div className="border-t pt-4 mt-4">
-                    <DetailRow label="Date" value={new Date(leadDetails.preferred_date).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })} />
-                    <DetailRow label="Slot" value={leadDetails.preferred_time_slot} />
+                  <p className="font-semibold">{leadDetails.pickup_address.city}, {leadDetails.pickup_address.state} - {leadDetails.pickup_address.pincode}</p>
+                  <div className="border-t pt-4 mt-4 space-y-3">
+                    <DetailRow 
+                      label="Date" 
+                      value={new Date(leadDetails.preferred_date).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })} 
+                    />
+                    <DetailRow label="Time Slot" value={leadDetails.preferred_time_slot} />
                   </div>
                   {leadDetails.customer_notes && (
-                    <div className="bg-[#F0F7F6] p-3 rounded-lg border border-[#1B8A05]/20">
+                    <div className="bg-[#F0F7F6] p-3 rounded-lg border border-[#1B8A05]/20 mt-4">
                       <p className="font-semibold text-gray-800">Customer Notes:</p>
                       <p className="text-gray-700 italic">"{leadDetails.customer_notes}"</p>
                     </div>
                   )}
-                </DetailCard>
-
-                {/* Disputes Section */}
-                <DetailCard icon={<AlertTriangle size={24} className="text-[#FEC925]" />} title="Disputes & Issues">
-                  <LeadDisputesSection leadId={leadDetails.id} />
-                </DetailCard>
-
+                </div>
               </div>
+
+              {/* Disputes */}
+              <div className="bg-white p-6 rounded-2xl shadow-xl border-2 border-[#FEC925]/20">
+                <div className="flex items-center gap-3 mb-6">
+                  <AlertTriangle className="text-[#FEC925]" size={24} />
+                  <h3 className="text-2xl font-bold text-[#1C1C1B]">Disputes & Issues</h3>
+                </div>
+                <LeadDisputesSection leadId={leadDetails.id} />
+              </div>
+            </div>
+
+            {/* Right Column */}
+            <div className="space-y-8">
               
-              {/* Sidebar (Right Column) */}
-              <div className="lg:col-span-1 space-y-8">
-                
-                <DetailCard icon={<MessageSquare size={24} className="text-[#FEC925]" />} title="Live Chat">
-                  <LeadChat 
-                    leadId={leadDetails.id} 
-                    currentUserId={leadDetails.user.id} 
-                    partnerAssigned={!!leadDetails.assigned_partner} 
-                  />
-                </DetailCard>
+              {/* Chat */}
+              <div className="bg-white p-6 rounded-2xl shadow-xl border-2 border-[#FEC925]/20">
+                <div className="flex items-center gap-3 mb-6">
+                  <MessageSquare className="text-[#FEC925]" size={24} />
+                  <h3 className="text-2xl font-bold text-[#1C1C1B]">Live Chat</h3>
+                </div>
+                <LeadChat 
+                  leadId={leadDetails.id}
+                  currentUserId={leadDetails.user.id}
+                  partnerAssigned={!!leadDetails.assigned_partner}
+                />
+              </div>
 
-                <DetailCard icon={<Activity size={24} className="text-[#FEC925]" />} title="Lead History">
-                  <LeadStatusHistory leadId={leadDetails.id} />
-                </DetailCard>
+              {/* History */}
+              <div className="bg-white p-6 rounded-2xl shadow-xl border-2 border-[#FEC925]/20">
+                <div className="flex items-center gap-3 mb-6">
+                  <Activity className="text-[#FEC925]" size={24} />
+                  <h3 className="text-2xl font-bold text-[#1C1C1B]">Lead History</h3>
+                </div>
+                <LeadStatusHistory leadId={leadDetails.id} />
+              </div>
 
-                <DetailCard icon={<Shield size={24} className="text-[#FEC925]" />} title="Assigned Partner">
-                  {leadDetails.assigned_partner ? (
-                    <>
-                      <DetailRow label="Business" value={leadDetails.assigned_partner.business_name} />
-                      <DetailRow label="Agent" value={leadDetails.assigned_partner.contact_person} />
-                      <DetailRow label="Phone" value={leadDetails.assigned_partner.phone} />
-                      <DetailRow label="Rating" value={`${leadDetails.assigned_partner.rating_average} ★`} />
-                      <DetailRow label="Leads Done" value={leadDetails.assigned_partner.total_leads_completed} />
-                    </>
-                  ) : (
-                    <p className="text-gray-500 text-center py-4">Waiting for a partner to be assigned...</p>
-                  )}
-                </DetailCard>
+              {/* Partner Info */}
+              <div className="bg-white p-6 rounded-2xl shadow-xl border-2 border-[#FEC925]/20">
+                <div className="flex items-center gap-3 mb-6">
+                  <Shield className="text-[#FEC925]" size={24} />
+                  <h3 className="text-2xl font-bold text-[#1C1C1B]">Assigned Partner</h3>
+                </div>
+                {leadDetails.assigned_partner ? (
+                  <div className="space-y-3">
+                    <DetailRow label="Business" value={leadDetails.assigned_partner.business_name} />
+                    <DetailRow label="Agent" value={leadDetails.assigned_partner.contact_person} />
+                    <DetailRow label="Phone" value={leadDetails.assigned_partner.phone} />
+                    <DetailRow label="Rating" value={`${leadDetails.assigned_partner.rating_average} ★`} />
+                    <DetailRow label="Leads Done" value={leadDetails.assigned_partner.total_leads_completed} />
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-center py-4">Waiting for assignment...</p>
+                )}
+              </div>
 
-                <DetailCard icon={<User size={24} className="text-[#FEC925]" />} title="Customer Details">
+              {/* Customer Info */}
+              <div className="bg-white p-6 rounded-2xl shadow-xl border-2 border-[#FEC925]/20">
+                <div className="flex items-center gap-3 mb-6">
+                  <User className="text-[#FEC925]" size={24} />
+                  <h3 className="text-2xl font-bold text-[#1C1C1B]">Customer Details</h3>
+                </div>
+                <div className="space-y-3">
                   <DetailRow label="Name" value={leadDetails.user.name} />
                   <DetailRow label="Phone" value={leadDetails.user.phone} />
                   <DetailRow label="Email" value={leadDetails.user.email} />
-                </DetailCard>
-
+                </div>
               </div>
             </div>
-          </motion.div>
-        )}
+          </div>
+        </motion.div>
       </div>
 
       {/* Modals */}
@@ -434,7 +793,10 @@ const LeadDetailPageComplete: React.FC = () => {
             onClose={() => setIsDisputeModalOpen(false)}
             leadId={leadDetails.id}
             leadNumber={leadDetails.lead_number}
-            onSuccess={handleActionSuccess}
+            onSuccess={() => {
+              loadLeadDetails(leadDetails.id);
+              setIsDisputeModalOpen(false);
+            }}
           />
 
           <CancelLeadModal
@@ -442,7 +804,10 @@ const LeadDetailPageComplete: React.FC = () => {
             onClose={() => setIsCancelModalOpen(false)}
             leadId={leadDetails.id}
             leadNumber={leadDetails.lead_number}
-            onSuccess={handleActionSuccess}
+            onSuccess={() => {
+              loadLeadDetails(leadDetails.id);
+              setIsCancelModalOpen(false);
+            }}
           />
 
           <RescheduleModal
@@ -452,7 +817,10 @@ const LeadDetailPageComplete: React.FC = () => {
             leadNumber={leadDetails.lead_number}
             currentDate={leadDetails.preferred_date}
             currentTimeSlot={leadDetails.preferred_time_slot}
-            onSuccess={handleActionSuccess}
+            onSuccess={() => {
+              loadLeadDetails(leadDetails.id);
+              setIsRescheduleModalOpen(false);
+            }}
           />
 
           {leadDetails.assigned_partner && (
@@ -465,9 +833,112 @@ const LeadDetailPageComplete: React.FC = () => {
               partnerName={leadDetails.assigned_partner.business_name}
               onSuccess={() => {
                 setHasRated(true);
-                handleActionSuccess();
+                loadLeadDetails(leadDetails.id);
+                setIsRateModalOpen(false);
               }}
             />
+          )}
+
+          {/* Counter Offer Modal */}
+          {selectedOffer && (
+            <AnimatePresence>
+              {isCounterModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="bg-white rounded-2xl shadow-2xl max-w-lg w-full"
+                  >
+                    <div className="p-6 border-b-2 border-[#FEC925]/20">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-2xl font-bold text-[#1C1C1B]">Counter Offer</h3>
+                        <button 
+                          onClick={() => setIsCounterModalOpen(false)}
+                          disabled={respondingToOffer}
+                          className="text-gray-400 hover:text-[#FF0000] transition"
+                        >
+                          <X size={24} />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="p-6 space-y-6">
+                      <div className="bg-gray-50 p-4 rounded-xl">
+                        <p className="text-sm text-gray-600 mb-2">Price Range</p>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-xs text-gray-500">System Price</p>
+                            <p className="text-lg font-bold">{formatCurrency(selectedOffer.system_calculated_price)}</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-xs text-gray-500">↔</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500">Partner Offer</p>
+                            <p className="text-lg font-bold">{formatCurrency(selectedOffer.partner_offered_price)}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block font-semibold text-[#1C1C1B] mb-2">Your Counter Price *</label>
+                        <div className="relative">
+                          <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 font-bold">₹</span>
+                          <input
+                            type="number"
+                            value={counterPrice}
+                            onChange={(e) => setCounterPrice(e.target.value)}
+                            placeholder="Enter your price"
+                            disabled={respondingToOffer}
+                            className="w-full pl-8 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[#FEC925] focus:outline-none font-bold text-lg"
+                          />
+                        </div>
+                        <p className="text-xs text-gray-500 mt-2">
+                          Price must be between system and partner offer
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="block font-semibold text-[#1C1C1B] mb-2">Message to Partner (Optional)</label>
+                        <textarea
+                          value={counterNotes}
+                          onChange={(e) => setCounterNotes(e.target.value)}
+                          placeholder="Explain your counter offer..."
+                          disabled={respondingToOffer}
+                          rows={3}
+                          className="w-full p-4 border-2 border-gray-200 rounded-xl focus:border-[#FEC925] focus:outline-none resize-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="p-6 border-t-2 border-gray-200 flex gap-3">
+                      <button
+                        onClick={() => setIsCounterModalOpen(false)}
+                        disabled={respondingToOffer}
+                        className="flex-1 px-6 py-3 border-2 border-gray-300 rounded-xl font-bold hover:bg-gray-100 transition"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => handleOfferResponse(selectedOffer.id, 'counter')}
+                        disabled={respondingToOffer}
+                        className="flex-1 px-6 py-3 bg-[#FEC925] text-[#1C1C1B] rounded-xl font-bold hover:bg-[#e5b520] transition flex items-center justify-center gap-2"
+                      >
+                        {respondingToOffer ? (
+                          <Loader2 className="animate-spin" size={20} />
+                        ) : (
+                          <>
+                            <MessageCircle size={20} />
+                            Send Counter
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </motion.div>
+                </div>
+              )}
+            </AnimatePresence>
           )}
         </>
       )}
@@ -475,4 +946,12 @@ const LeadDetailPageComplete: React.FC = () => {
   );
 };
 
-export default LeadDetailPageComplete;
+// Helper Components
+const DetailRow: React.FC<{ label: string; value: string | number | null }> = ({ label, value }) => (
+  <div className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
+    <span className="font-semibold text-gray-600">{label}:</span>
+    <span className="font-bold text-[#1C1C1B] text-right">{value || 'N/A'}</span>
+  </div>
+);
+
+export default LeadDetailComplete;

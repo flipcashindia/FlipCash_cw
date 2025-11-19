@@ -134,7 +134,7 @@ const MainNavbar: React.FC<MainNavbarProps> = () => {
                     <div className="w-8 h-8 bg-gradient-to-r from-[#FEC925] to-[#1B8A05] rounded-full flex items-center justify-center text-[#1C1C1B] font-bold">
                       {user?.name ? user.name[0].toUpperCase() : user?.phone?.[0] || 'U'}
                     </div>
-                    <span className="hidden md:block text-[#1C1C1B] font-semibold">
+                    <span className="hidden lg:block text-[#1C1C1B] font-semibold">
                       {user?.name || user?.phone?.slice(-10)}
                     </span>
                   </button>
@@ -220,7 +220,7 @@ const MainNavbar: React.FC<MainNavbarProps> = () => {
                         </button>
 
                         <button
-                          onClick={() => handleMenuItemClick('/my-account/helpdesk')}
+                          onClick={() => handleMenuItemClick('/contact')}
                           className="w-full text-left px-4 py-3 hover:bg-[#F0F7F6] transition-colors flex items-center space-x-3 text-[#1C1C1B] group"
                         >
                           <div className="p-2 bg-[#F0F7F6] rounded-lg group-hover:bg-white transition-colors">
@@ -269,7 +269,6 @@ const MainNavbar: React.FC<MainNavbarProps> = () => {
               </button>
             </div>
           </div>
-
           {/* Mobile Menu */}
           {showMobileMenu && (
             <div className="md:hidden mt-4 pb-4 space-y-2 border-t-2 border-[#FEC925]/20 pt-4 animate-fadeIn">
@@ -327,7 +326,7 @@ const MainNavbar: React.FC<MainNavbarProps> = () => {
                   </Link>
                   
                   <Link 
-                    to="/my-account/my-addresses" 
+                    to="/my-account/addresses" 
                     onClick={() => setShowMobileMenu(false)}
                     className="flex items-center gap-3 py-3 px-4 text-[#1C1C1B] hover:bg-[#F0F7F6] rounded-lg transition-colors"
                   >
@@ -336,16 +335,16 @@ const MainNavbar: React.FC<MainNavbarProps> = () => {
                   </Link>
                   
                   <Link 
-                    to="/my-leads" 
+                    to="/my-account/my-orders" 
                     onClick={() => setShowMobileMenu(false)}
                     className="flex items-center gap-3 py-3 px-4 text-[#1C1C1B] hover:bg-[#F0F7F6] rounded-lg transition-colors"
                   >
                     <ShoppingBag size={18} className="text-[#FEC925]" />
-                    <span className="font-medium">My Orders</span>
+                    <span className="font-medium">My Leads</span>
                   </Link>
                   
                   <Link 
-                    to="/my-wallet" 
+                    to="/my-account/my-wallet" 
                     onClick={() => setShowMobileMenu(false)}
                     className="flex items-center gap-3 py-3 px-4 text-[#1C1C1B] hover:bg-[#F0F7F6] rounded-lg transition-colors"
                   >
@@ -354,7 +353,7 @@ const MainNavbar: React.FC<MainNavbarProps> = () => {
                   </Link>
                   
                   <Link 
-                    to="/passbook" 
+                    to="/my-account/passbook" 
                     onClick={() => setShowMobileMenu(false)}
                     className="flex items-center gap-3 py-3 px-4 text-[#1C1C1B] hover:bg-[#F0F7F6] rounded-lg transition-colors"
                   >
@@ -363,7 +362,7 @@ const MainNavbar: React.FC<MainNavbarProps> = () => {
                   </Link>
 
                   <Link 
-                    to="/helpdesk" 
+                    to="/contact" 
                     onClick={() => setShowMobileMenu(false)}
                     className="flex items-center gap-3 py-3 px-4 text-[#1C1C1B] hover:bg-[#F0F7F6] rounded-lg transition-colors"
                   >

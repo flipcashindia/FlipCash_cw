@@ -281,14 +281,13 @@ const ModelCard: React.FC<ModelCardProps> = ({ model, onClick, index }) => {
         </div>
 
         {/* Get Quote Badge - Larger text for desktop */}
-        <div className="hidden sm:block mt-3 md:mt-4 py-2 md:py-2.5 px-3 md:px-4 bg-gradient-to-r from-[#FEC925] to-[#1B8A05] text-[#1C1C1B] rounded-lg font-bold text-center text-sm md:text-base lg:text-lg opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="hidden sm:block mt-3 md:mt-4 py-2 md:py-2.5 px-3 md:px-3 bg-gradient-to-r from-[#FEC925] to-[#1B8A05] text-[#1C1C1B] rounded-lg font-bold text-center text-sm md:text-base lg:text-md opacity-0 group-hover:opacity-100 transition-opacity">
           Get Instant Quote →
         </div>
 
         {/* Mobile-only CTA indicator - Larger text */}
         <div className="sm:hidden mt-2 flex items-center justify-center gap-1 text-[#1B8A05] text-xs font-bold">
-          <span>Tap for quote</span>
-          <span>→</span>
+          <span>Tap for quote →</span>
         </div>
       </div>
     </motion.button>

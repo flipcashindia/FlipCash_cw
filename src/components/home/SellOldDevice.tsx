@@ -1,4 +1,5 @@
-// flipcash_cw/src/components/home/SellOldDevice.tsx
+// SellOldDevice.tsx - Updated with City Service Integration
+// Checks if category has items in selected city, shows NoService page if not
 
 import React, { useState, useEffect } from 'react';
 import { ChevronRight, Star, TrendingUp, Smartphone, Sparkles } from 'lucide-react';
@@ -6,10 +7,11 @@ import * as catalogService from '../../api/services/catalogService';
 import { useImageCache } from '../../api/utils/imageCache';
 import type { Category, Brand, Model } from '../../api/types/catalog.types';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion'; // For UI animations
+import { motion } from 'framer-motion';
+import { useCityContext } from '../../context/CityContext';
+import useCityService from '../../api/services/useCityService';
+import NoServicePage from '../pages/NoServicePage';
 
-// Assuming Model and Brand interfaces are globally defined, 
-// we only extend Category and Brand here if needed:
 interface CategoryWithCount extends Category {
   models_count?: number;
 }
@@ -18,18 +20,15 @@ interface BrandWithCount extends Brand {
   models_count?: number;
 }
 
-// --- Image Component with Cache and Fallback ---
 const CachedImage: React.FC<{
   src: string | null | undefined;
   alt: string;
   className?: string;
   fallback?: React.ReactNode;
 }> = ({ src, alt, className, fallback }) => {
-  // Assuming useImageCache returns a string URL or null/undefined
   const cachedSrc = useImageCache(src);
   const [imageError, setImageError] = useState(false);
 
-  // Use cachedSrc for image loading, fallback if cache fails or src is null
   if (!cachedSrc || imageError) {
     return (
       <div className={`bg-gradient-to-br from-teal-50 to-teal-100 flex items-center justify-center ${className}`}>
@@ -49,29 +48,27 @@ const CachedImage: React.FC<{
   );
 };
 
-// --- Main Component ---
 const SellOldDevice: React.FC = () => {
   const navigate = useNavigate();
+  const { selectedCity, selectedState, openCityModal } = useCityContext();
+  const { serviceAvailability, hasCategoriesInCity } = useCityService();
+  
   const [categories, setCategories] = useState<CategoryWithCount[]>([]);
   const [_brands, setBrands] = useState<BrandWithCount[]>([]);
   const [models, setModels] = useState<Model[]>([]);
   const [featuredModels, setFeaturedModels] = useState<Model[]>([]);
-  
   const [selectedCategory, _setSelectedCategory] = useState<string | null>(null);
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
-  // const [searchQuery, setSearchQuery] = useState('');
   const [searchQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [_error, setError] = useState<string | null>(null);
-  // const [searchLoading, setSearchLoading] = useState(false);
+  const [showNoService, setShowNoService] = useState(false);
 
-  // Fetch categories and featured models on mount
   useEffect(() => {
     loadCategories();
     loadFeaturedModels();
   }, []);
 
-  // Fetch brands when category changes
   useEffect(() => {
     if (selectedCategory) {
       loadBrands(selectedCategory);
@@ -84,7 +81,6 @@ const SellOldDevice: React.FC = () => {
     }
   }, [selectedCategory]);
 
-  // Fetch models when brand changes
   useEffect(() => {
     if (selectedCategory && selectedBrand) {
       loadModels(selectedCategory, selectedBrand);
@@ -93,12 +89,20 @@ const SellOldDevice: React.FC = () => {
     }
   }, [selectedCategory, selectedBrand]);
 
+  // Check if service is available when city changes
+  useEffect(() => {
+    if (!serviceAvailability.isAvailable && selectedCity) {
+      setShowNoService(true);
+    } else {
+      setShowNoService(false);
+    }
+  }, [serviceAvailability.isAvailable, selectedCity]);
+
   const loadCategories = async () => {
     try {
       setLoading(true);
       setError(null);
       const data = await catalogService.getCategories();
-      // Safely access data, assuming it might be paginated or array
       const categoriesArray = Array.isArray(data) ? data : (data as { results: Category[] }).results || [];
       setCategories(categoriesArray as CategoryWithCount[]);
     } catch (err: any) {
@@ -113,36 +117,59 @@ const SellOldDevice: React.FC = () => {
   const loadFeaturedModels = async () => {
     try {
       const data = await catalogService.getFeaturedModels();
-      // Get top 8 featured models for the new scrolling list
-      setFeaturedModels(data.slice(0, 8)); 
+      setFeaturedModels(data.slice(0, 8));
     } catch (err) {
       console.error('Failed to load featured models:', err);
       setFeaturedModels([]);
     }
   };
-  
-  // --- Navigation & Routing Handlers ---
 
-  const handleCategoryClick = (categoryId: string) => {
-    // Navigates to the brand selection page
+  const handleCategoryClick = async (categoryId: string) => {
+
+    // Navigate to brand selection
     navigate('/select-brand', { state: { categoryId } });
+
+
+    // Check if user has selected a city
+    if (!selectedCity) {
+      openCityModal();
+      return;
+    }
+
+    // Check if service is available in selected city
+    if (!serviceAvailability.isAvailable) {
+      setShowNoService(true);
+      return;
+    }
+
+    // Check if category has items in this city
+    const hasItems = await hasCategoriesInCity(categoryId);
+    
+    if (!hasItems) {
+      setShowNoService(true);
+      return;
+    }
+
+    // Navigate to brand selection
+    // navigate('/select-brand', { state: { categoryId } });
+
+    
   };
 
-  // const handleBrandSelect = (brandId: string) => {
-  //   setSelectedBrand(brandId);
-  //   setSearchQuery('');
-  //   setError(null);
-  // };
-  
   const handleGetExactPrice = (modelId: string) => {
-    // Navigates to the Device Stepper to start the condition flow
+
     navigate('/device-stepper', { state: { modelId } });
+
+    // Check if service is available
+    if (!serviceAvailability.isAvailable) {
+      setShowNoService(true);
+      return;
+    }
+
+    // navigate('/device-stepper', { state: { modelId } });
   };
-  
-  // --- Data Fetching Logic (Simplified) ---
 
   const loadBrands = async (categoryId: string) => {
-    // ... (logic remains the same)
     try {
       setLoading(true);
       setError(null);
@@ -163,12 +190,10 @@ const SellOldDevice: React.FC = () => {
   };
 
   const loadModels = async (categoryId: string, brandId: string) => {
-    // ... (logic remains the same)
     try {
       setLoading(true);
       setError(null);
       const data = await catalogService.getModelsByBrandAndCategory(brandId, categoryId);
-      
       setModels(data.slice(0, 4));
     } catch (err: any) {
       setError(err.message || 'Failed to load models');
@@ -179,7 +204,6 @@ const SellOldDevice: React.FC = () => {
   };
 
   const loadFeaturedModelsForCategory = async (categoryId: string) => {
-    // ... (logic remains the same)
     try {
       setLoading(true);
       const brandsData = await catalogService.getBrandsByCategory(categoryId);
@@ -200,41 +224,19 @@ const SellOldDevice: React.FC = () => {
     }
   };
 
-  // const handleSearch = async (query: string) => {
-  //   // ... (logic remains the same)
-  //   setSearchQuery(query);
-    
-  //   if (query.length < 2) {
-  //     if (selectedCategory && selectedBrand) {
-  //       loadModels(selectedCategory, selectedBrand);
-  //     } else if (selectedCategory) {
-  //       loadFeaturedModelsForCategory(selectedCategory);
-  //     }
-  //     return;
-  //   }
-
-  //   try {
-  //     setSearchLoading(true);
-  //     const results = await catalogService.searchModels(query);
-  //     setModels(results.slice(0, 4));
-  //   } catch (err) {
-  //     console.error('Search error:', err);
-  //   } finally {
-  //     setSearchLoading(false);
-  //   }
-  // };
-
-  // const resetSelection = () => {
-  //   setSelectedCategory(null);
-  //   setSelectedBrand(null);
-  //   setSearchQuery('');
-  //   setModels([]);
-  //   setBrands([]);
-  //   setError(null);
-  // };
-
-  // const selectedCategoryData = categories.find(c => c.id === selectedCategory);
-  // const selectedBrandData = brands.find(b => b.id === selectedBrand);
+  // Show No Service page if service not available
+  if (showNoService) {
+    return (
+      <NoServicePage
+        cityName={selectedCity || undefined}
+        stateName={selectedState || undefined}
+        onChangeCity={() => {
+          setShowNoService(false);
+          openCityModal();
+        }}
+      />
+    );
+  }
 
   return (
     <section className="bg-gradient-to-b from-teal-50 via-white to-teal-50 py-16 min-h-screen">
@@ -251,27 +253,20 @@ const SellOldDevice: React.FC = () => {
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             Get the best price in minutes. 100% safe, instant payment guaranteed.
           </p>
+
+          {/* City Badge */}
+          {selectedCity && (
+            <button
+              onClick={openCityModal}
+              className="mt-4 inline-flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-md hover:shadow-lg transition-all"
+            >
+              <span className="text-sm font-semibold text-gray-700">
+                📍 {selectedCity}, {selectedState}
+              </span>
+              <span className="text-xs text-teal-600">Change</span>
+            </button>
+          )}
         </div>
-
-        {/* Search Bar */}
-        {/* <div className="max-w-2xl mx-auto mb-8">
-          <div className="relative group">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-teal-600 transition-colors" size={20} />
-            <input
-              type="text"
-              placeholder="Search by brand or model name..."
-              value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
-              className="w-full pl-12 pr-4 py-4 rounded-xl border-2 border-gray-200 focus:border-teal-500 focus:outline-none text-lg shadow-sm hover:shadow-md transition-all"
-            />
-            {searchLoading && (
-              <Loader2 className="absolute right-4 top-1/2 transform -translate-y-1/2 text-teal-600 animate-spin" size={20} />
-            )}
-          </div>
-        </div> */}
-
-        {/* Breadcrumb & Error Message (Code remains the same) */}
-        {/* ... */}
 
         {/* Categories Grid */}
         {!loading && !selectedCategory && categories.length > 0 && (
@@ -284,7 +279,7 @@ const SellOldDevice: React.FC = () => {
               {categories.map((category) => (
                 <button
                   key={category.id}
-                  onClick={() =>  handleCategoryClick(category.id)}
+                  onClick={() => handleCategoryClick(category.id)}
                   className="bg-white rounded-xl p-6 shadow-md hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border-2 border-transparent hover:border-teal-500 group"
                 >
                   <div className="flex flex-col items-center text-center">
@@ -295,13 +290,8 @@ const SellOldDevice: React.FC = () => {
                       fallback={<Smartphone className="text-teal-400" size={32} />}
                     />
                     <h4 className="font-bold text-gray-800 mb-2 group-hover:text-teal-600 transition-colors">
-                      {category.title}
+                      {category.title} 
                     </h4>
-                    {/* {category.models_count !== undefined && (
-                      <p className="text-sm text-gray-500">
-                        {category.models_count} models
-                      </p>
-                    )} */}
                     {category.is_featured && (
                       <div className="mt-2 flex items-center gap-1 text-yellow-600">
                         <Star size={14} fill="currentColor" />
@@ -315,10 +305,7 @@ const SellOldDevice: React.FC = () => {
           </div>
         )}
 
-        {/* Brands Grid (Code remains the same) */}
-        {/* ... */}
-
-        {/* Models Grid (Code remains the same, ensures click navigates) */}
+        {/* Models Grid */}
         {!loading && models.length > 0 && (
           <div className="max-w-6xl mx-auto">
             <div className="flex items-center justify-between mb-6">
@@ -340,14 +327,14 @@ const SellOldDevice: React.FC = () => {
                   onClick={() => handleGetExactPrice(model.id)}
                   className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 cursor-pointer border-2 border-transparent hover:border-teal-500 group"
                 >
-                  {/* ... Model Card Content ... */}
+                  {/* Model Card Content */}
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* --- 🌟 MODERNIZED TRENDING DEVICES SECTION 🌟 --- */}
+        {/* Trending Devices Section */}
         {!loading && !selectedCategory && featuredModels.length > 0 && (
           <div className="max-w-6xl mx-auto mt-16">
             <div className="flex items-center justify-between mb-6">
@@ -355,13 +342,8 @@ const SellOldDevice: React.FC = () => {
                 <TrendingUp className="text-teal-600" size={24} />
                 <span>Trending Devices</span>
               </h3>
-              {/* <button className="text-teal-600 hover:text-teal-700 font-medium flex items-center gap-1 transition-colors">
-                View All
-                <ChevronRight size={18} />
-              </button> */}
             </div>
             
-            {/* Horizontal Scrolling Container */}
             <div className="flex overflow-x-scroll gap-4 pb-4 -mx-4 px-4 custom-scrollbar-hidden" 
                  style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
               {featuredModels.map((model) => (
@@ -405,13 +387,8 @@ const SellOldDevice: React.FC = () => {
                 </motion.div>
               ))}
             </div>
-            
           </div>
         )}
-        {/* --- END TRENDING DEVICES SECTION --- */}
-
-        {/* Empty State (Code remains the same) */}
-        {/* ... */}
       </div>
     </section>
   );

@@ -142,6 +142,7 @@ const DeviceStepper: React.FC = () => {
     postal_code: '',
     is_default: false,
   });
+  
 
   const timeSlots: TimeSlot[] = [
     { value: 'morning', label: 'Morning (9AM - 1PM)' },
@@ -604,9 +605,9 @@ const DeviceStepper: React.FC = () => {
       <fieldset className="space-y-3 md:space-y-4">
         <legend className="text-lg md:text-xl lg:text-2xl font-bold text-[#1C1C1B] pb-2 md:pb-3 border-b-2 border-[#FEC925] flex items-center gap-2">
           {/* Icon based on type */}
-          {fieldName === 'storage' && <span className="text-2xl">💾</span>}
-          {fieldName === 'ram' && <span className="text-2xl">⚡</span>}
-          {fieldName === 'color' && <span className="text-2xl">🎨</span>}
+          {fieldName === 'storage' && <span className="text-2xl"></span>}
+          {fieldName === 'ram' && <span className="text-2xl"></span>}
+          {fieldName === 'color' && <span className="text-2xl"></span>}
           <span>
             {title}
             <span className="text-[#FF0000]"> *</span>
@@ -650,7 +651,6 @@ const DeviceStepper: React.FC = () => {
       </fieldset>
     );
   };
-
 
 
 
@@ -814,7 +814,7 @@ const DeviceStepper: React.FC = () => {
                   {/* Left: Image Section - Mobile: Full Width, Desktop: 40% */}
                   <div className="w-full md:w-2/5 lg:w-2/5 mb-4 md:mb-0">
                     <div className="sticky top-4">
-                      <div className="w-full aspect-square md:h-64 lg:h-80 xl:h-96 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg md:rounded-xl lg:rounded-2xl flex items-center justify-center p-4 md:p-6 lg:p-8 border-2 border-gray-200 shadow-lg">
+                      <div className="w-full aspect-square h-full bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg md:rounded-xl lg:rounded-2xl flex items-center justify-center p-2 border-2 border-gray-200 shadow-lg">
                         <img
                           src={modelDetails.images?.[0]?.image_url || modelFromState?.thumbnail}
                           alt={modelDetails.name}
@@ -1252,11 +1252,11 @@ const DeviceStepper: React.FC = () => {
                           {/* Content */}
                           <div className="relative z-10">
                             {/* Icon based on time slot */}
-                            <div className="text-3xl md:text-4xl mb-2">
-                              {slot.value === 'morning' && '🌅'}
-                              {slot.value === 'afternoon' && '☀️'}
-                              {slot.value === 'evening' && '🌆'}
-                            </div>
+                            {/* <div className="text-3xl md:text-4xl mb-2">
+                              {slot.value === 'morning'}
+                              {slot.value === 'afternoon'}
+                              {slot.value === 'evening'}
+                            </div> */}
                             <p className="text-sm md:text-base lg:text-lg font-bold">
                               {slot.label}
                             </p>
