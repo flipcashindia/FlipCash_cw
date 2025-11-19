@@ -53,6 +53,7 @@ import CookiePolicy from './components/pages/CookiePolicy';
 import Career from './components/pages/Career';
 import DisputesList from './components/lead/DisputesList';
 import DisputeDetail from './components/lead/DisputeDetail';
+import BankAccountsPage from './components/account/BankAccountPage';
 
 function Home() {
   return (
@@ -173,7 +174,7 @@ function AppRoutes() {
           <Route path="/my-account/raise-dispute" element={<RaiseDisputePage {...accountProps} />} />
           <Route path="/my-account/feedback" element={<FeedbackPage {...accountProps} />} />
           <Route path="/my-account/kyc" element={<KYCPage {... accountProps } />} />
-          <Route path="/my-account/bank" element={<MyAccountPage {...accountProps} />} />
+          <Route path="/my-account/bank" element={<BankAccountsPage {...accountProps} />} />
           <Route path="/disputes" element={<DisputesList />} />
           <Route path="/disputes/:disputeId" element={<DisputeDetail />} />
           <Route path="/contact" element={<ContactUsPage />} />
