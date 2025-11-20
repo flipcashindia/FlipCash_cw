@@ -84,7 +84,7 @@ const KYCPage: React.FC<KYCPageProps> = ({ onNavClick }) => {
   };
 
   // Image compression function
-  const compressImage = async (file: File, maxSizeMB = 1): Promise<File> => {
+  const compressImage = async (file: File, _maxSizeMB = 1): Promise<File> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       
