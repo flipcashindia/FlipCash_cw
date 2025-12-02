@@ -151,8 +151,10 @@ function AppRoutes() {
           <Route path="/refund-policy" element={<RefundPolicy />} />
           <Route path="/terms-of-use" element={<TermsOfUse />} />
           <Route path="/career" element={<Career />} />
-          <Route path="/sell-old-product" element={<SellOldDevice />} />
           <Route path="/cookies" element={<CookiePolicy />} />
+          
+          <Route path="/sell-old-product" element={<SellOldDevice />} />
+          
           <Route path="/select-brand" element={<ChooseBrand />} />
           <Route path="/select-model" element={<SelectModel />} />
           
