@@ -183,7 +183,7 @@ const DeviceStepper: React.FC = () => {
 
       const defaultStorage = ['64 GB', '128GB', '256GB', '512GB'];
       const defaultRAM = ['4GB', '6GB', '8GB', '12GB'];
-      const defaultColors = ['Black', 'White', 'Silver', 'Gold', 'Blue', 'Red', 'Green', 'Purple', 'Graphite'];
+      // const defaultColors = ['Black', 'White', 'Silver', 'Gold', 'Blue', 'Red', 'Green', 'Purple', 'Graphite'];
 
       const processedModelDetails: ModelData = {
         ...modelData,
@@ -193,9 +193,9 @@ const DeviceStepper: React.FC = () => {
         ram_options: (modelData.ram_options && modelData.ram_options.length > 0)
           ? modelData.ram_options
           : defaultRAM,
-        color_options: (modelData.color_options && modelData.color_options.length > 0)
-          ? modelData.color_options
-          : defaultColors,
+        // color_options: (modelData.color_options && modelData.color_options.length > 0)
+        //   ? modelData.color_options
+        //   : defaultColors,
       };
 
       setModelDetails(processedModelDetails);
@@ -306,10 +306,10 @@ const DeviceStepper: React.FC = () => {
         setError('Please select a RAM option.');
         return;
       }
-      if (modelDetails.color_options.length > 0 && !conditionResponses['color']) {
-        setError('Please select a color option.');
-        return;
-      }
+      // if (modelDetails.color_options.length > 0 && !conditionResponses['color']) {
+      //   setError('Please select a color option.');
+      //   return;
+      // }
       setStep(2);
     }
 
@@ -858,8 +858,8 @@ const DeviceStepper: React.FC = () => {
                     {/* RAM Options */}
                     {renderVariantOptions('RAM', 'ram', modelDetails.ram_options)}
                     
-                    {/* Color Options */}
-                    {renderVariantOptions('Color', 'color', modelDetails.color_options)}
+                    {/* Color Options
+                    {renderVariantOptions('Color', 'color', modelDetails.color_options)} */}
                   </div>
                 </div>
               </motion.div>

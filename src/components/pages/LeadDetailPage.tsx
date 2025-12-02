@@ -52,7 +52,25 @@ interface LeadOffer {
   partner_offered_price: string;
   price_deviation_percentage: string;
   partner_notes: string;
-  inspection_findings: string;
+  inspection_findings: {
+    screen_condition?: string;
+    body_condition?: string;
+    battery_health?: number;
+    accessories?: {
+      bill_available?: boolean;
+      box_available?: boolean;
+      charger_available?: boolean;
+      earphones_available?: boolean;
+    };
+    functional_issues?: string[];
+    additional_notes?: string;
+    pricing_calculation?: {
+      max_price_cap?: number;
+      min_price_cap?: number;
+      pricing_rule_id?: string;
+      pricing_rule_name?: string;
+    };
+  } | string;  // Allow string for backward compatibility
   inspection_photos: string[];
   status: string;
   status_display: string;
@@ -105,6 +123,32 @@ const STATUS_COLORS: Record<string, string> = {
   'expired': 'bg-gray-200 text-gray-600'
 };
 
+// Helper to safely convert any value to string for display
+const safeStringify = (value: any): string => {
+  if (value === null || value === undefined) {
+    return 'N/A';
+  }
+  if (typeof value === 'string') {
+    return value;
+  }
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+  if (Array.isArray(value)) {
+    return value.map(item => safeStringify(item)).join(', ');
+  }
+  if (typeof value === 'object') {
+    try {
+      return Object.entries(value)
+        .map(([k, v]) => `${k}: ${safeStringify(v)}`)
+        .join(' | ');
+    } catch {
+      return JSON.stringify(value);
+    }
+  }
+  return String(value);
+};
+
 const LeadDetailComplete: React.FC = () => {
   const navigate = useNavigate();
   const { leadId } = useParams<{ leadId: string }>();
@@ -136,6 +180,33 @@ const LeadDetailComplete: React.FC = () => {
     loadLeadDetails(leadId);
     loadOffers(leadId);
   }, [leadId]);
+
+
+  // Add this near the top with safeStringify
+const safeStringify = (value: any): string => {
+    if (value === null || value === undefined) {
+      return 'N/A';
+    }
+    if (typeof value === 'string') {
+      return value;
+    }
+    if (typeof value === 'number' || typeof value === 'boolean') {
+      return String(value);
+    }
+    if (Array.isArray(value)) {
+      return value.map(item => safeStringify(item)).join(', ');
+    }
+    if (typeof value === 'object') {
+      try {
+        return Object.entries(value)
+          .map(([k, v]) => `${k}: ${safeStringify(v)}`)
+          .join(' | ');
+      } catch {
+        return JSON.stringify(value);
+      }
+    }
+    return String(value);
+  };
 
   const loadLeadDetails = async (id: string) => {
     try {
@@ -233,7 +304,7 @@ const LeadDetailComplete: React.FC = () => {
 
       console.log('📤 Responding to offer:', payload);
 
-      const res = await fetch(`${API_BASE_URL}/offers/${offerId}/respond/`, {
+      const res = await fetch(`${API_BASE_URL}/leads/offers/${offerId}/respond/`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -332,7 +403,7 @@ const LeadDetailComplete: React.FC = () => {
         {/* Back Button */}
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
           <button 
-            onClick={() => navigate('/leads')} 
+            onClick={() => navigate('/my-account/my-orders')} 
             className="flex items-center gap-2 text-[#1C1C1B] hover:text-[#FEC925] transition font-semibold"
           >
             <ArrowLeft size={24} />
@@ -461,6 +532,7 @@ const LeadDetailComplete: React.FC = () => {
                     </p>
                   </div>
                 ) : (
+                  // inspection_findings
                   <div className="space-y-4">
                     {offers.map((offer, index) => (
                       <motion.div
@@ -512,7 +584,29 @@ const LeadDetailComplete: React.FC = () => {
                             {offer.inspection_findings && (
                               <div className="bg-blue-50 p-3 rounded-lg">
                                 <p className="text-sm font-semibold text-gray-700 mb-1">Inspection Findings:</p>
-                                <p className="text-sm text-gray-600">{offer.inspection_findings}</p>
+                                <div className="text-sm text-gray-600 space-y-1">
+                                  {typeof offer.inspection_findings === 'object' ? (
+                                    <>
+                                      {offer.inspection_findings.screen_condition && (
+                                        <p>Screen: {offer.inspection_findings.screen_condition}</p>
+                                      )}
+                                      {offer.inspection_findings.body_condition && (
+                                        <p>Body: {offer.inspection_findings.body_condition}</p>
+                                      )}
+                                      {offer.inspection_findings.battery_health && (
+                                        <p>Battery Health: {offer.inspection_findings.battery_health}%</p>
+                                      )}
+                                      {offer.inspection_findings.functional_issues && offer.inspection_findings.functional_issues.length > 0 && (
+                                        <p>Issues: {offer.inspection_findings.functional_issues.join(', ')}</p>
+                                      )}
+                                      {offer.inspection_findings.additional_notes && (
+                                        <p>Notes: {offer.inspection_findings.additional_notes}</p>
+                                      )}
+                                    </>
+                                  ) : (
+                                    <p>{String(offer.inspection_findings)}</p>
+                                  )}
+                                </div>
                               </div>
                             )}
 
@@ -658,7 +752,7 @@ const LeadDetailComplete: React.FC = () => {
                     <DetailRow 
                       key={key} 
                       label={key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} 
-                      value={Array.isArray(value) ? value.join(', ') : String(value)} 
+                      value={safeStringify(value)} 
                     />
                   ))}
                 </div>
@@ -947,11 +1041,19 @@ const LeadDetailComplete: React.FC = () => {
 };
 
 // Helper Components
-const DetailRow: React.FC<{ label: string; value: string | number | null }> = ({ label, value }) => (
-  <div className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
-    <span className="font-semibold text-gray-600">{label}:</span>
-    <span className="font-bold text-[#1C1C1B] text-right">{value || 'N/A'}</span>
-  </div>
-);
+// Also update DetailRow to be more defensive
+const DetailRow: React.FC<{ label: string; value: any }> = ({ label, value }) => {
+  // Ensure value is always a string
+  const displayValue = typeof value === 'object' && value !== null 
+    ? safeStringify(value) 
+    : (value || 'N/A');
+    
+  return (
+    <div className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
+      <span className="font-semibold text-gray-600">{label}:</span>
+      <span className="font-bold text-[#1C1C1B] text-right">{displayValue}</span>
+    </div>
+  );
+};
 
 export default LeadDetailComplete;
