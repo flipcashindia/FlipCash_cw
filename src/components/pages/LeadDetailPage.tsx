@@ -262,12 +262,15 @@ const safeStringify = (value: any): string => {
     }
   };
 
+  // Change loadVisitData function:
+
   const loadVisitData = async (leadId: string) => {
     try {
       setLoadingVisit(true);
       const token = localStorage.getItem('access_token');
       if (!token) return;
 
+      // Step 1: Get visit list to get visit ID
       const res = await fetch(`${API_BASE_URL}/visits/visits/?lead=${leadId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -276,8 +279,45 @@ const safeStringify = (value: any): string => {
         const data = await res.json();
         const visits = data.results || data || [];
         if (visits.length > 0) {
-          // Get the most recent visit
-          setVisitData(visits[0]);
+          const visit = visits[0];
+          
+          // Step 2: Get verification code using the dedicated endpoint
+          const codeRes = await fetch(
+            `${API_BASE_URL}/visits/visits/${visit.id}/verification_code/`,
+            { headers: { 'Authorization': `Bearer ${token}` } }
+          );
+          
+          if (codeRes.ok) {
+            const codeData = await codeRes.json();
+            
+            // Merge visit data with verification code data
+            setVisitData({
+              id: visit.id,
+              visit_number: codeData.visit_number,
+              verification_code_masked: codeData.verification_code,
+              verification_code_expires_at: codeData.expires_at,
+              is_code_verified: visit.is_code_verified,
+              verified_at: null,
+              can_verify: codeData.can_verify,
+              is_code_expired: codeData.is_expired,
+              status: visit.status,
+              status_display: visit.status_display
+            });
+          } else {
+            // If verification code endpoint fails, set basic visit data
+            setVisitData({
+              id: visit.id,
+              visit_number: visit.visit_number,
+              verification_code_masked: '******',
+              verification_code_expires_at: '',
+              is_code_verified: visit.is_code_verified,
+              verified_at: null,
+              can_verify: visit.can_verify,
+              is_code_expired: false,
+              status: visit.status,
+              status_display: visit.status_display
+            });
+          }
         }
       }
     } catch (err) {
@@ -286,6 +326,10 @@ const safeStringify = (value: any): string => {
       setLoadingVisit(false);
     }
   };
+
+
+
+
 
   const regenerateVerificationCode = async () => {
     if (!visitData) return;
@@ -362,11 +406,11 @@ const safeStringify = (value: any): string => {
       const res = await fetch(`${API_BASE_URL}/leads/offers/?lead=${id}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      console.log('offere response : ', res)
+      // console.log('offere response : ', res)
 
       if (res.ok) {
         const data = await res.json();
-        console.log('offer data : ', data)
+        // console.log('offer data : ', data)
         setOffers(data.results || data || []);
       }
     } catch (err) {
