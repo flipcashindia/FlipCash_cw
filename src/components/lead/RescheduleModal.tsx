@@ -65,14 +65,81 @@ const RescheduleModal: React.FC<RescheduleModalProps> = ({
   //   });
   // };
 
+  // const formatDateForAPI = (date: Date): string => {
+  //   return date.toISOString().split('T')[0]; // YYYY-MM-DD
+  // };
+
   const formatDateForAPI = (date: Date): string => {
-    return date.toISOString().split('T')[0]; // YYYY-MM-DD
+    // ✅ More reliable date formatting
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`; // YYYY-MM-DD
   };
 
   // const isDateToday = (date: Date): boolean => {
   //   const today = new Date();
   //   return date.toDateString() === today.toDateString();
   // };
+
+  // const handleReschedule = async () => {
+  //   if (!selectedDate || !selectedTimeSlot) {
+  //     setError('Please select both date and time slot');
+  //     return;
+  //   }
+
+  //   setIsSubmitting(true);
+  //   setError(null);
+
+  //   try {
+  //     // const token = localStorage.getItem('access_token');
+  //     const token = localStorage.getItem('access_token');
+  //     if (!token) {
+  //       throw new Error('Authentication required');
+  //     }
+
+  //     const response = await fetch(
+  //       `${API_BASE_URL}/leads/leads/${leadId}/`,
+  //       {
+  //         method: 'PATCH',
+  //         headers: {
+  //           'Content-Type': 'application/json',
+  //           'Authorization': `Bearer ${token}`
+  //         },
+  //         body: JSON.stringify({
+  //           preferred_date: formatDateForAPI(selectedDate),
+  //           preferred_time_slot: selectedTimeSlot,
+  //           customer_notes: additionalNotes || undefined
+  //         })
+  //       }
+  //     );
+      console.log('reschedule : ', response)
+  //     if (!response.ok) {
+  //       const errorData = await response.json().catch(() => ({}));
+  //       throw new Error(
+  //         errorData.detail || 
+  //         errorData.error || 
+  //         'Failed to reschedule lead'
+  //       );
+  //     }
+
+  //     // Success
+  //     onSuccess();
+  //     onClose();
+      
+  //     // Reset form
+  //     setSelectedDate(availableDates[0]);
+  //     setSelectedTimeSlot('');
+  //     setAdditionalNotes('');
+      
+  //   } catch (err: any) {
+  //     console.error('Reschedule error:', err);
+  //     setError(err.message || 'An error occurred while rescheduling');
+  //   } finally {
+  //     setIsSubmitting(false);
+  //   }
+  // };
+
 
   const handleReschedule = async () => {
     if (!selectedDate || !selectedTimeSlot) {
@@ -85,9 +152,17 @@ const RescheduleModal: React.FC<RescheduleModalProps> = ({
 
     try {
       const token = localStorage.getItem('access_token');
+      
+      // ✅ ADD THESE CHECKS:
       if (!token) {
-        throw new Error('Authentication required');
+        throw new Error('Please login again - session expired');
       }
+
+      // ✅ LOG THE REQUEST FOR DEBUGGING:
+      // console.log('🔐 Token exists:', !!token);
+      // console.log('📤 Rescheduling lead:', leadId);
+      // console.log('📅 New date:', formatDateForAPI(selectedDate));
+      // console.log('⏰ New slot:', selectedTimeSlot);
 
       const response = await fetch(
         `${API_BASE_URL}/leads/leads/${leadId}/`,
@@ -95,24 +170,37 @@ const RescheduleModal: React.FC<RescheduleModalProps> = ({
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${token}`  // ✅ Already correct
           },
           body: JSON.stringify({
             preferred_date: formatDateForAPI(selectedDate),
             preferred_time_slot: selectedTimeSlot,
-            customer_notes: additionalNotes || undefined
+            customer_notes: additionalNotes || undefined  // ✅ Remove undefined fields
           })
         }
       );
-      console.log('reschedule : ', response)
+
+      // ✅ LOG THE RESPONSE:
+      // console.log('📥 Response status:', response.status);
+      
+      if (response.status === 401) {
+        // Token expired or invalid
+        localStorage.removeItem('access_token');
+        throw new Error('Session expired. Please login again.');
+      }
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Error response:', errorData);
         throw new Error(
           errorData.detail || 
           errorData.error || 
           'Failed to reschedule lead'
         );
       }
+
+      const data = await response.json();
+      // console.log('✅ Success:', data);
 
       // Success
       onSuccess();
@@ -124,12 +212,15 @@ const RescheduleModal: React.FC<RescheduleModalProps> = ({
       setAdditionalNotes('');
       
     } catch (err: any) {
-      console.error('Reschedule error:', err);
+      console.error('❌ Reschedule error:', err);
       setError(err.message || 'An error occurred while rescheduling');
     } finally {
       setIsSubmitting(false);
     }
   };
+
+
+
 
   const handleClose = () => {
     if (!isSubmitting) {
