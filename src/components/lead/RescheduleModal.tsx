@@ -113,7 +113,7 @@ const RescheduleModal: React.FC<RescheduleModalProps> = ({
   //         })
   //       }
   //     );
-      console.log('reschedule : ', response)
+      // console.log('reschedule : ', response)
   //     if (!response.ok) {
   //       const errorData = await response.json().catch(() => ({}));
   //       throw new Error(
@@ -159,10 +159,10 @@ const RescheduleModal: React.FC<RescheduleModalProps> = ({
       }
 
       // ✅ LOG THE REQUEST FOR DEBUGGING:
-      // console.log('🔐 Token exists:', !!token);
-      // console.log('📤 Rescheduling lead:', leadId);
-      // console.log('📅 New date:', formatDateForAPI(selectedDate));
-      // console.log('⏰ New slot:', selectedTimeSlot);
+      console.log('🔐 Token exists:', !!token);
+      console.log('📤 Rescheduling lead:', leadId);
+      console.log('📅 New date:', formatDateForAPI(selectedDate));
+      console.log('⏰ New slot:', selectedTimeSlot);
 
       const response = await fetch(
         `${API_BASE_URL}/leads/leads/${leadId}/`,
@@ -181,7 +181,7 @@ const RescheduleModal: React.FC<RescheduleModalProps> = ({
       );
 
       // ✅ LOG THE RESPONSE:
-      // console.log('📥 Response status:', response.status);
+      console.log('📥 Response status:', response.status);
       
       if (response.status === 401) {
         // Token expired or invalid
@@ -200,7 +200,7 @@ const RescheduleModal: React.FC<RescheduleModalProps> = ({
       }
 
       const data = await response.json();
-      // console.log('✅ Success:', data);
+      console.log('✅ Success:', data);
 
       // Success
       onSuccess();
