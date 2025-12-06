@@ -4,7 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { 
   ArrowLeft, Loader2, AlertTriangle, X, Package, Wallet, MapPin, User, Shield, CheckCircle,
   Tag, MessageSquare, Activity, Calendar, XCircle, Star, ThumbsUp, ThumbsDown, 
-  DollarSign, Clock, MessageCircle
+  DollarSign, Clock, MessageCircle, RefreshCw, Copy, Check
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -106,6 +106,19 @@ interface LeadDetail {
   created_at: string;
 }
 
+interface VisitData {
+  id: string;
+  visit_number: string;
+  verification_code_masked: string;
+  verification_code_expires_at: string;
+  is_code_verified: boolean;
+  verified_at: string | null;
+  can_verify: boolean;
+  is_code_expired: boolean;
+  status: string;
+  status_display: string;
+}
+
 // Status badges
 const STATUS_COLORS: Record<string, string> = {
   'booked': 'bg-blue-100 text-blue-800',
@@ -171,6 +184,15 @@ const LeadDetailComplete: React.FC = () => {
   const [counterNotes, setCounterNotes] = useState('');
   const [respondingToOffer, setRespondingToOffer] = useState(false);
 
+  // Visit verification states
+  const [visitData, setVisitData] = useState<VisitData | null>(null);
+  const [loadingVisit, setLoadingVisit] = useState(false);
+  const [regeneratingCode, setRegeneratingCode] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
+
+
+
+
   useEffect(() => {
     if (!leadId) {
       setError("No lead ID provided");
@@ -179,6 +201,7 @@ const LeadDetailComplete: React.FC = () => {
     }
     loadLeadDetails(leadId);
     loadOffers(leadId);
+    loadVisitData(leadId);
   }, [leadId]);
 
 
@@ -238,6 +261,97 @@ const safeStringify = (value: any): string => {
       setLoading(false);
     }
   };
+
+  const loadVisitData = async (leadId: string) => {
+    try {
+      setLoadingVisit(true);
+      const token = localStorage.getItem('access_token');
+      if (!token) return;
+
+      const res = await fetch(`${API_BASE_URL}/visits/visits/?lead=${leadId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const visits = data.results || data || [];
+        if (visits.length > 0) {
+          // Get the most recent visit
+          setVisitData(visits[0]);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load visit data:', err);
+    } finally {
+      setLoadingVisit(false);
+    }
+  };
+
+  const regenerateVerificationCode = async () => {
+    if (!visitData) return;
+    
+    try {
+      setRegeneratingCode(true);
+      setError(null);
+      const token = localStorage.getItem('access_token');
+      if (!token) throw new Error("Authentication required");
+
+      const res = await fetch(`${API_BASE_URL}/visits/visits/${visitData.id}/regenerate_code/`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          reason: 'Customer requested new code'
+        })
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || err.error || 'Failed to regenerate code');
+      }
+
+      // Refresh visit data to get new code
+      if (leadId) {
+        await loadVisitData(leadId);
+      }
+      
+      // Show success feedback
+      setCodeCopied(false);
+      
+    } catch (err: any) {
+      console.error('Failed to regenerate code:', err);
+      setError(err.message);
+    } finally {
+      setRegeneratingCode(false);
+    }
+  };
+
+  const copyCodeToClipboard = () => {
+    if (visitData && visitData.verification_code_masked !== '******') {
+      navigator.clipboard.writeText(visitData.verification_code_masked);
+      setCodeCopied(true);
+      setTimeout(() => setCodeCopied(false), 2000);
+    }
+  };
+
+  const getTimeRemaining = (expiryDate: string): string => {
+    const now = new Date();
+    const expiry = new Date(expiryDate);
+    const diff = expiry.getTime() - now.getTime();
+    
+    if (diff <= 0) return 'Expired';
+    
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(minutes / 60);
+    
+    if (hours > 0) {
+      return `${hours}h ${minutes % 60}m remaining`;
+    }
+    return `${minutes}m remaining`;
+  };
+
 
   const loadOffers = async (id: string) => {
     try {
@@ -499,6 +613,112 @@ const safeStringify = (value: any): string => {
               </div>
             </div>
           </div>
+
+           {/* Visit Verification Code Section - PROMINENT */}
+          {visitData && !visitData.is_code_verified && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.05 }}
+              className="mb-8"
+            >
+              <div className="bg-gradient-to-r from-[#1B8A05]/10 to-[#FEC925]/10 p-6 rounded-2xl shadow-xl border-2 border-[#1B8A05]">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-3">
+                      <Shield className="text-[#1B8A05]" size={32} />
+                      <div>
+                        <h3 className="text-2xl font-bold text-[#1C1C1B]">Verification Code</h3>
+                        <p className="text-sm text-gray-600">Share this code with the partner agent on arrival</p>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-white p-4 rounded-xl border-2 border-[#1B8A05] inline-block">
+                      <div className="flex items-center gap-4">
+                        <div className="text-center">
+                          <p className="text-xs text-gray-500 mb-1">Your Code</p>
+                          <p className="text-4xl font-mono font-bold text-[#1B8A05] tracking-wider">
+                            {loadingVisit ? '------' : visitData.verification_code_masked}
+                          </p>
+                        </div>
+                        
+                        <button
+                          onClick={copyCodeToClipboard}
+                          disabled={visitData.verification_code_masked === '******'}
+                          className="p-3 bg-[#FEC925]/20 hover:bg-[#FEC925] rounded-lg transition"
+                          title="Copy code"
+                        >
+                          {codeCopied ? (
+                            <Check className="text-[#1B8A05]" size={20} />
+                          ) : (
+                            <Copy className="text-[#1C1C1B]" size={20} />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 flex items-center gap-4 text-sm">
+                      <span className={`font-semibold ${visitData.is_code_expired ? 'text-[#FF0000]' : 'text-gray-600'}`}>
+                        {visitData.is_code_expired ? (
+                          '⏰ Code Expired'
+                        ) : (
+                          `⏰ ${getTimeRemaining(visitData.verification_code_expires_at)}`
+                        )}
+                      </span>
+                      <span className="text-gray-400">•</span>
+                      <span className="text-gray-600">Visit #{visitData.visit_number}</span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={regenerateVerificationCode}
+                    disabled={regeneratingCode}
+                    className="px-6 py-3 bg-[#1B8A05] text-white rounded-xl font-bold hover:bg-[#156d04] transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {regeneratingCode ? (
+                      <>
+                        <Loader2 className="animate-spin" size={20} />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw size={20} />
+                        Get New Code
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    <strong>📱 Important:</strong> The partner will ask for this code when they arrive. 
+                    Only share it with the verified FlipCash partner at your doorstep.
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Code Verified Success */}
+          {visitData && visitData.is_code_verified && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-8"
+            >
+              <div className="bg-[#1B8A05]/10 p-6 rounded-2xl border-2 border-[#1B8A05]">
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="text-[#1B8A05]" size={32} />
+                  <div>
+                    <h3 className="text-xl font-bold text-[#1B8A05]">Verification Complete</h3>
+                    <p className="text-sm text-gray-600">
+                      Partner verified on {formatDate(visitData.verified_at || '')}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
 
           {/* Offers Section - PROMINENT DISPLAY */}
           {(loadingOffers || offers.length > 0 || ['offer_made', 'negotiating'].includes(leadDetails.status)) && (
