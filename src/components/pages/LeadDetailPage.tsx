@@ -498,15 +498,17 @@ const safeStringify = (value: any): string => {
     }
   };
 
-  const openCounterModal = (offer: LeadOffer) => {
-    setSelectedOffer(offer);
-    const minPrice = Math.min(parseFloat(offer.system_calculated_price), parseFloat(offer.partner_offered_price));
-    const maxPrice = Math.max(parseFloat(offer.system_calculated_price), parseFloat(offer.partner_offered_price));
-    const suggestedPrice = Math.round((minPrice + maxPrice) / 2);
-    setCounterPrice(suggestedPrice.toString());
-    setIsCounterModalOpen(true);
-  };
+  // const openCounterModal = (offer: LeadOffer) => {
+  //   setSelectedOffer(offer);
+  //   const minPrice = Math.min(parseFloat(offer.system_calculated_price), parseFloat(offer.partner_offered_price));
+  //   const maxPrice = Math.max(parseFloat(offer.system_calculated_price), parseFloat(offer.partner_offered_price));
+  //   const suggestedPrice = Math.round((minPrice + maxPrice) / 2);
+  //   setCounterPrice(suggestedPrice.toString());
+  //   setIsCounterModalOpen(true);
+  // };
 
+ 
+ 
   const formatCurrency = (value: string | number): string => {
     return `₹${parseFloat(value.toString()).toLocaleString('en-IN')}`;
   };
@@ -925,14 +927,14 @@ const safeStringify = (value: any): string => {
                                 )}
                               </button>
 
-                              <button
+                              {/* <button
                                 onClick={() => openCounterModal(offer)}
                                 disabled={respondingToOffer}
                                 className="flex items-center justify-center gap-2 px-4 py-3 bg-[#FEC925] text-[#1C1C1B] rounded-lg font-bold hover:bg-[#e5b520] transition disabled:opacity-50"
                               >
                                 <MessageCircle size={20} />
                                 Counter Offer
-                              </button>
+                              </button> */}
 
                               <button
                                 onClick={() => handleOfferResponse(offer.id, 'reject')}
