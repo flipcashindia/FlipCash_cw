@@ -1341,17 +1341,17 @@ const DeviceStepper: React.FC = () => {
 };
 
 // Helper for DetailRow in Estimate step - Mobile Optimized
-const DetailRow: React.FC<{ label: string, value: string, highlight?: 'add' | 'ded' }> = ({ label, value, highlight }) => {
-  let valueColor = 'text-[#1C1C1B]';
-  if (highlight === 'add') valueColor = 'text-[#1B8A05]';
-  if (highlight === 'ded') valueColor = 'text-[#FF0000]';
+// const DetailRow: React.FC<{ label: string, value: string, highlight?: 'add' | 'ded' }> = ({ label, value, highlight }) => {
+//   let valueColor = 'text-[#1C1C1B]';
+//   if (highlight === 'add') valueColor = 'text-[#1B8A05]';
+//   if (highlight === 'ded') valueColor = 'text-[#FF0000]';
 
-  return (
-    <div className="flex justify-between items-center py-1.5 md:py-2 border-b border-gray-100 last:border-0">
-      <span className="font-semibold text-gray-600 text-xs sm:text-sm md:text-base">{label}:</span>
-      <span className={`font-bold text-right ${valueColor} text-xs sm:text-sm md:text-base`}>{value}</span>
-    </div>
-  );
-};
+//   return (
+//     <div className="flex justify-between items-center py-1.5 md:py-2 border-b border-gray-100 last:border-0">
+//       <span className="font-semibold text-gray-600 text-xs sm:text-sm md:text-base">{label}:</span>
+//       <span className={`font-bold text-right ${valueColor} text-xs sm:text-sm md:text-base`}>{value}</span>
+//     </div>
+//   );
+// };
 
 export default DeviceStepper;
