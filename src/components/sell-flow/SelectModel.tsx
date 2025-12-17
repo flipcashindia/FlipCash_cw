@@ -249,7 +249,7 @@ const ModelCard: React.FC<ModelCardProps> = ({ model, onClick, index }) => {
 
       <div className="relative z-10">
         {/* Image Container - Larger image with minimal padding */}
-        <div className="w-full aspect-square sm:h-32 md:h-36 lg:h-44 flex items-center justify-center mb-2 sm:mb-2.5 md:mb-3 bg-[#F5F5F5] rounded-lg md:rounded-xl overflow-hidden">
+        <div className="w-full aspect-square sm:h-32 md:h-36 lg:h-44 flex items-center justify-center mb-2 md:mb-3 rounded-lg md:rounded-xl overflow-hidden">
           {imageUrl ? (
             <>
               {!imageLoaded && (
@@ -268,27 +268,27 @@ const ModelCard: React.FC<ModelCardProps> = ({ model, onClick, index }) => {
         </div>
 
         {/* Model Info - Larger text */}
-        <h3 className="font-bold text-sm sm:text-base md:text-lg lg:text-xl text-[#1C1C1B] mb-2 sm:mb-2.5 line-clamp-2 group-hover:text-[#1B8A05] transition leading-tight min-h-[36px] sm:min-h-[40px] md:min-h-[48px]">
+        <h3 className="font-bold w-full text-center sm:text-base md:text-lg lg:text-xl text-[#1C1C1B] mb-2 line-clamp-2 group-hover:text-[#1B8A05] transition leading-tight min-h-[36px] sm:min-h-[40px] md:min-h-[48px]">
           {model.name}
         </h3>
 
         {/* Base Price - Larger text */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-2 sm:mt-2.5 md:mt-3 pt-2 sm:pt-2.5 md:pt-3 border-t border-gray-200 gap-0.5 sm:gap-0">
+        {/* <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-2 sm:mt-2.5 md:mt-3 pt-2 sm:pt-2.5 md:pt-3 border-t border-gray-200 gap-0.5 sm:gap-0">
           <span className="text-xs sm:text-sm md:text-base text-gray-600 font-semibold">Get Upto:</span>
           <span className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-[#1B8A05]">
             ₹{Number(model.base_price).toLocaleString('en-IN')}
           </span>
-        </div>
+        </div> */}
 
         {/* Get Quote Badge - Larger text for desktop */}
-        <div className="hidden sm:block mt-3 md:mt-4 py-2 md:py-2.5 px-3 md:px-3 bg-gradient-to-r from-[#FEC925] to-[#1B8A05] text-[#1C1C1B] rounded-lg font-bold text-center text-sm md:text-base lg:text-md opacity-0 group-hover:opacity-100 transition-opacity">
+        {/* <div className="hidden sm:block mt-3 md:mt-4 py-2 md:py-2.5 px-3 md:px-3 bg-gradient-to-r from-[#FEC925] to-[#1B8A05] text-[#1C1C1B] rounded-lg font-bold text-center text-sm md:text-base lg:text-md opacity-0 group-hover:opacity-100 transition-opacity">
           Get Instant Quote →
-        </div>
+        </div> */}
 
         {/* Mobile-only CTA indicator - Larger text */}
-        <div className="sm:hidden mt-2 flex items-center justify-center gap-1 text-[#1B8A05] text-xs font-bold">
+        {/* <div className="sm:hidden mt-2 flex items-center justify-center gap-1 text-[#1B8A05] text-xs font-bold">
           <span>Tap for quote →</span>
-        </div>
+        </div> */}
       </div>
     </motion.button>
   );

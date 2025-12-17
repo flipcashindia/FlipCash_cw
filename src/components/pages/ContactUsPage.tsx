@@ -784,30 +784,31 @@ const ContactUs: React.FC = () => {
                 </div>
               </motion.div>
               
-              {/* Embedded Map */}
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
-                className="rounded-2xl shadow-2xl overflow-hidden border-2 border-gray-100"
-              >
-                <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3508.272464788895!2d77.03739207549658!3d28.445944075756677!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x390d18e4e39a4ed5%3A0x8b4d8c6e7ad9e8f5!2sPalm%20Court%2C%20Mehrauli%20-%20Gurgaon%20Rd%2C%20Sukhrali%2C%20Gurugram%2C%20Haryana%20122001!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"
-                  width="100%"
-                  height="400"
-                  style={{ border: 0 }}
-                  allowFullScreen={false}
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  title="Flipcash Office Location - Gurugram"
-                ></iframe>
-              </motion.div>
             </div>
 
           </div>
         </div>
       </section>
-
+      <section className="px-4 md:px-6 mb-16 max-w-7xl mx-auto">
+      {/* Embedded Map */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="rounded-2xl shadow-2xl overflow-hidden border-2 border-gray-100"
+          >
+            <iframe
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3508.272464788895!2d77.03739207549658!3d28.445944075756677!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x390d18e4e39a4ed5%3A0x8b4d8c6e7ad9e8f5!2sPalm%20Court%2C%20Mehrauli%20-%20Gurgaon%20Rd%2C%20Sukhrali%2C%20Gurugram%2C%20Haryana%20122001!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"
+              width="100%"
+              height="400"
+              style={{ border: 0 }}
+              allowFullScreen={false}
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              title="Flipcash Office Location - Gurugram"
+            ></iframe>
+          </motion.div>
+      </section>
       {/* FAQ Quick Links */}
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4 md:px-6 text-center">

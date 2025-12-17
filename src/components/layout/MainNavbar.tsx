@@ -190,7 +190,7 @@ const MainNavbar: React.FC<MainNavbarProps> = () => {
                         </button>
 
                         <button
-                          onClick={() => handleMenuItemClick('/my-account/my-wallet')}
+                          onClick={() => handleMenuItemClick('/wallet')}
                           className="w-full text-left px-4 py-3 hover:bg-[#F0F7F6] transition-colors flex items-center space-x-3 text-[#1C1C1B] group"
                         >
                           <div className="p-2 bg-[#F0F7F6] rounded-lg group-hover:bg-white transition-colors">
@@ -344,7 +344,7 @@ const MainNavbar: React.FC<MainNavbarProps> = () => {
                   </Link>
                   
                   <Link 
-                    to="/my-account/my-wallet" 
+                    to="/wallet" 
                     onClick={() => setShowMobileMenu(false)}
                     className="flex items-center gap-3 py-3 px-4 text-[#1C1C1B] hover:bg-[#F0F7F6] rounded-lg transition-colors"
                   >

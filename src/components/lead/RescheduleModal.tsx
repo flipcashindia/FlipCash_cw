@@ -382,7 +382,7 @@ const RescheduleModal: React.FC<RescheduleModalProps> = ({
                         disabled:opacity-50 disabled:cursor-not-allowed
                       `}
                     >
-                      <span className="text-3xl">{slot.icon}</span>
+                      {/* <span className="text-3xl">{slot.icon}</span> */}
                       <div className="flex-1 text-left">
                         <div className="flex items-center gap-2">
                           <Clock size={18} className={isSelected ? 'text-[#FEC925]' : 'text-gray-500'} />

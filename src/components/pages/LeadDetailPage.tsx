@@ -205,7 +205,7 @@ const LeadDetailComplete: React.FC = () => {
   }, [leadId]);
 
 
-  // Add this near the top with safeStringify
+  // Add this near the top with safeStringify 
 const safeStringify = (value: any): string => {
     if (value === null || value === undefined) {
       return 'N/A';
@@ -637,7 +637,7 @@ const safeStringify = (value: any): string => {
                   </button>
                 )}
 
-                {canCancel && (
+                {canCancel && (visitData?.status != 'in_progress') && (
                   <button 
                     onClick={() => setIsCancelModalOpen(true)}
                     className="px-4 py-2 bg-[#FF0000]/10 text-[#FF0000] rounded-lg font-bold hover:bg-[#FF0000] hover:text-white transition flex items-center gap-2"
@@ -989,8 +989,8 @@ const safeStringify = (value: any): string => {
                   <DetailRow label="Device" value={`${leadDetails.brand_name} ${leadDetails.device_model.name}`} />
                   <DetailRow label="Storage" value={leadDetails.storage} />
                   <DetailRow label="RAM" value={leadDetails.ram} />
-                  <DetailRow label="Color" value={leadDetails.color} />
-                  <DetailRow label="IMEI" value={leadDetails.imei_primary} />
+                  {/* <DetailRow label="Color" value={leadDetails.color} />
+                  <DetailRow label="IMEI" value={leadDetails.imei_primary} /> */}
                 </div>
               </div>
 

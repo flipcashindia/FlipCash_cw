@@ -354,7 +354,7 @@ const FAQ: React.FC = () => {
       </section>
 
       {/* Quick Links Section */}
-      <section className="py-12 bg-gray-50">
+      {/* <section className="py-12 bg-gray-50">
         <div className="container mx-auto px-4 md:px-6 text-center">
           <h3 className="text-2xl font-bold text-gray-900 mb-6">Explore More</h3>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -384,7 +384,7 @@ const FAQ: React.FC = () => {
             </button>
           </div>
         </div>
-      </section>
+      </section> */}
     </div>
   );
 };
