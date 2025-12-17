@@ -37,6 +37,9 @@ export const verifyOTP = async (data: VerifyOTPRequest): Promise<VerifyOTPRespon
     localStorage.setItem('access_token', accessToken);
     localStorage.setItem('refresh_token', refreshToken);
     localStorage.setItem('user', JSON.stringify(response.data.user));
+
+    // navigate to homepage
+    
     
     // ✅ ADD: Verify they were saved
     // console.log('Stored access token:', localStorage.getItem('access_token'));

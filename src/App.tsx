@@ -54,6 +54,11 @@ import Career from './components/pages/Career';
 import DisputesList from './components/lead/DisputesList';
 import DisputeDetail from './components/lead/DisputeDetail';
 import BankAccountsPage from './components/account/BankAccountPage';
+import ConsumerWalletPage from './components/wallet/ConsumerWalletPage';
+import ConsumerWithdrawalHistoryPage from './components/wallet/ConsumerWithdrawalHistoryPage';
+import ConsumerWithdrawPage from './components/wallet/ConsumerWithdrawPage';
+import ConsumerPaymentCallbackPage from './components/wallet/ConsumerPaymentCallbackPage';
+import ConsumerBankAccountsPage from './components/wallet/ConsumerBankAccountsPage';
 
 function Home() {
   return (
@@ -169,6 +174,18 @@ function AppRoutes() {
           <Route path="/my-account" element={<MyAccountPage {...accountProps} />} />
           <Route path="/my-account/my-orders" element={<MyOrderPage {...accountProps} />} />
           <Route path="/my-account/my-wallet" element={<MyWalletPage {...accountProps} />} />
+          <Route path="/wallet" element={<ConsumerWalletPage />} />
+          <Route path="/wallet/history" element={<ConsumerWithdrawalHistoryPage /> } />
+          <Route path="/wallet/withdraw" element={<ConsumerWithdrawPage />} />
+          <Route
+            path="/bank-accounts"
+            element={
+              // <ProtectedRoute>
+                <ConsumerBankAccountsPage />
+              // </ProtectedRoute>
+            }
+          />
+          <Route path="wallet/withdraw/callback" element={<ConsumerPaymentCallbackPage />} />
           <Route path="/my-account/passbook" element={<PassbookPage {...accountProps} />} />
           <Route path="/my-account/addresses" element={<MyAddressesPage {...accountProps} />} />
           <Route path="/my-account/account-details" element={<AccountDetailsPage {...accountProps} />} />

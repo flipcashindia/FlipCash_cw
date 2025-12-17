@@ -226,7 +226,7 @@ const BankAccountsPage: React.FC<BankAccountsPageProps> = ({ onNavClick }) => {
           {/* ========== HEADER ========== */}
           <div className="flex items-center gap-4 mb-8 pb-6 border-b-2 border-[#FEC925]/20">
             <button
-              onClick={() => onNavClick('account')}
+              onClick={() => onNavClick('Dashboard' as any)}
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
               <ArrowLeft size={24} />

@@ -6,13 +6,8 @@ const AboutUs: React.FC = () => {
   return (
     <div className="bg-white">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-[#FEC925] to-yellow-400 py-20">
+      {/* <section className="bg-gradient-to-br from-[#FEC925] to-yellow-400 py-20">
         <div className="container mx-auto px-4 md:px-6 text-center">
-          {/* <img 
-            src={flipcashLogo} 
-            alt="Flipcash Logo" 
-            className="w-48 h-24 mx-auto mb-8 rounded-lg" 
-          /> */}
           <h1 className="text-5xl md:text-6xl font-extrabold text-black mb-6">
             About FLIPCASH
           </h1>
@@ -20,7 +15,7 @@ const AboutUs: React.FC = () => {
             Your Trusted Partner for Smart, Sustainable Electronic Device Solutions
           </p>
         </div>
-      </section>
+      </section> */}
 
       {/* Main About Section */}
       <section className="py-16">
@@ -31,7 +26,7 @@ const AboutUs: React.FC = () => {
               Welcome to FLIPCASH
             </h2>
             <p className="text-gray-700 text-lg leading-relaxed mb-4">
-              FLIPCASH is a <strong className="text-[#FEC925]">customer-first platform</strong> built to simplify how people sell, rent, and repair electronic gadgets. Whether you're upgrading your tech or decluttering your drawer, we make it effortless to trade in pre-owned smartphones, laptops, smartwatches, tablets, and more—from the comfort of your home.
+              FLIPCASH is a <strong className="text-[#FEC925]">customer-first platform</strong> built to simplify how people sell, and repair electronic gadgets. Whether you're upgrading your tech or decluttering your drawer, we make it effortless to trade in pre-owned smartphones, laptops, smartwatches, tablets, and more—from the comfort of your home.
             </p>
             <p className="text-gray-700 text-lg leading-relaxed mb-4">
               Our process is <strong className="text-[#FEC925]">transparent, fast, and designed around your convenience</strong>. With competitive pricing, doorstep pickup, and instant payments, FLIPCASH ensures that every transaction is smooth, secure, and rewarding.
@@ -190,7 +185,7 @@ const AboutUs: React.FC = () => {
       </section>
 
       {/* Stats Section */}
-      <section className="py-16 bg-black text-white">
+      {/* <section className="py-16 bg-black text-white">
         <div className="container mx-auto px-4 md:px-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             <div>
@@ -211,7 +206,7 @@ const AboutUs: React.FC = () => {
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
     </div>
   );
 };

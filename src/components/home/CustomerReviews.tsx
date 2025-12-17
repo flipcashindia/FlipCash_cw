@@ -270,10 +270,10 @@ const CustomerReviews: React.FC = () => {
     setPage((prevPage) => (prevPage - 1 + numPages) % numPages);
   };
 
-  const handleDotClick = (index: number) => {
-    setDirection(index > page ? 1 : -1);
-    setPage(index);
-  };
+  // const handleDotClick = (index: number) => {
+  //   setDirection(index > page ? 1 : -1);
+  //   setPage(index);
+  // };
 
   // Animation variants
   const variants = {
@@ -357,7 +357,7 @@ const CustomerReviews: React.FC = () => {
         </div>
 
         {/* Pagination Dots */}
-        <div className="flex justify-center items-center gap-2 mt-8 md:mt-10">
+        {/* <div className="flex justify-center items-center gap-2">
           {[...Array(numPages)].map((_, i) => (
             <button
               key={i}
@@ -371,10 +371,10 @@ const CustomerReviews: React.FC = () => {
               aria-current={i === page ? "true" : "false"}
             />
           ))}
-        </div>
+        </div> */}
 
         {/* Trust Indicators */}
-        <motion.div
+        {/* <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -397,7 +397,7 @@ const CustomerReviews: React.FC = () => {
             <p className="text-2xl md:text-3xl font-bold text-gray-900 mb-1">100%</p>
             <p className="text-xs md:text-sm text-gray-600">Secure Payment</p>
           </div>
-        </motion.div>
+        </motion.div> */}
       </div>
     </section>
   );

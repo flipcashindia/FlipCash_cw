@@ -104,7 +104,7 @@ const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ message, onDismiss }) => (
     </button>
   </motion.div>
 );
-
+//IMEI
 const DeviceStepper: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -323,7 +323,9 @@ const DeviceStepper: React.FC = () => {
           return;
         }
       }
-      setStep(3);
+      // new settup to get estimate here
+      await handleGetEstimate();
+      // setStep(4);
     }
 
     else if (step === 3) {
@@ -549,7 +551,7 @@ const DeviceStepper: React.FC = () => {
   const renderAttributeInput = (attr: DeviceAttribute) => {
     if (attr.is_boolean) {
       return (
-        <div className="grid grid-cols-2 gap-2 md:gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
           <button
             type="button"
             onClick={() => handleResponseChange(attr.name, "true")}
@@ -576,13 +578,13 @@ const DeviceStepper: React.FC = () => {
       );
     } else {
       return (
-        <div className="grid grid-cols-2 gap-2 md:gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
           {attr.options.map((option) => (
             <button
               key={option}
               type="button"
               onClick={() => handleResponseChange(attr.name, option)}
-              className={`p-3 md:p-4 border-2 rounded-lg md:rounded-xl text-left transition-all text-sm md:text-base ${
+              className={`p-3 md:p-4 border-2 rounded-lg md:rounded-xl text-center transition-all text-sm md:text-base ${
                 conditionResponses[attr.name] === option
                   ? 'bg-[#FEC925]/20 border-[#FEC925] ring-2 ring-[#FEC925]/50 font-bold'
                   : 'border-gray-300 hover:border-[#FEC925]'
@@ -613,7 +615,7 @@ const DeviceStepper: React.FC = () => {
             <span className="text-[#FF0000]"> *</span>
           </span>
         </legend>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-2 md:gap-3">
+        <div className="grid grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-2 md:gap-3">
           {options.map((option) => (
             <button
               key={option}
@@ -717,7 +719,7 @@ const DeviceStepper: React.FC = () => {
                   className="mt-3 md:mt-4 space-y-4 md:space-y-6 pl-3 md:pl-4 border-l-4 border-[#FEC925]/30"
                 >
                   {optionalAttrs.map((attr) => (
-                    <div key={attr.id} className="border-b border-gray-100 pb-4 md:pb-6">
+                    <div key={attr.id} className="max-w-5xl border-b border-gray-100 pb-4 md:pb-6">
                       <label className="block font-semibold text-base md:text-lg text-[#1C1C1B] mb-2 md:mb-3">
                         {attr.question_text}
                         {attr.help_text && (
@@ -749,10 +751,10 @@ const DeviceStepper: React.FC = () => {
     <section className="min-h-screen bg-gradient-to-br from-[#F0F7F6] via-white to-[#EAF6F4] py-4 md:py-8 lg:py-12">
       <div className="container mx-auto px-3 sm:px-4 max-w-4xl">
 
-        {/* Progress Bar - Compact for Mobile */}
+        {/* Progress Bar - Compact for Mobile Next*/}
         <div className="mb-4 md:mb-8">
           <div className="flex items-center justify-between mb-2">
-            {['Variant', 'Condition', 'IMEI', 'Estimate', 'Pickup'].map((label, idx) => (
+            {['Variant', 'Condition', 'Estimate', 'IMEI', 'Pickup'].map((label, idx) => (
               <div key={idx} className="flex-1 text-center last:flex-initial">
                 <div className={`w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 rounded-full mx-auto mb-1 md:mb-2 flex items-center justify-center font-bold text-sm md:text-lg ${
                   step > idx + 1 ? 'bg-[#1B8A05] text-white' :
@@ -932,13 +934,13 @@ const DeviceStepper: React.FC = () => {
                     </p>
                   </div>
                   <div className="bg-white border-2 border-gray-100 p-4 md:p-6 rounded-lg space-y-2 md:space-y-3">
-                    <DetailRow label="Base Price" value={`₹${parseFloat(estimate.base_price).toLocaleString('en-IN')}`} />
+                    {/* <DetailRow label="Base Price" value={`₹${parseFloat(estimate.base_price).toLocaleString('en-IN')}`} />
                     {estimate.additions?.map((add, idx) => (
                       <DetailRow key={`add-${idx}`} label={add.reason} value={`+₹${parseFloat(add.amount).toLocaleString('en-IN')}`} highlight="add" />
                     ))}
                     {estimate.deductions?.map((ded, idx) => (
                       <DetailRow key={`ded-${idx}`} label={ded.reason} value={`-₹${parseFloat(ded.amount).toLocaleString('en-IN')}`} highlight="ded" />
-                    ))}
+                    ))} */}
                     <div className="border-t-2 border-dashed border-gray-300 pt-2 md:pt-3 flex justify-between font-bold text-base md:text-lg">
                       <span className="text-[#1C1C1B]">Final Estimated Price</span>
                       <span className="text-[#1B8A05]">₹{parseFloat(estimate.final_price).toLocaleString('en-IN')}</span>
@@ -1318,9 +1320,9 @@ const DeviceStepper: React.FC = () => {
                   </>
                 ) : step === 1 ? (
                   <>Next: Condition <ArrowRight size={18} className="md:w-5 md:h-5" /></>
-                ) : step === 2 ? (
-                  <>Next: IMEI <ArrowRight size={18} className="md:w-5 md:h-5" /></>
                 ) : step === 3 ? (
+                  <>Next: IMEI <ArrowRight size={18} className="md:w-5 md:h-5" /></>
+                ) : step === 2 ? (
                   'Get My Estimate'
                 ) : step === 4 ? (
                   <>Schedule Pickup <ArrowRight size={18} className="md:w-5 md:h-5" /></>

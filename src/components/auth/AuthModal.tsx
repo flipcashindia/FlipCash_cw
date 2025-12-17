@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Phone, KeyRound, Smartphone, Shield, Zap, User, Mail, CheckCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import * as authService from '../../api/services/authService';
+import { useNavigate } from 'react-router-dom';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -30,6 +31,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess }
     name: '',
     email: '',
   });
+  const navigate = useNavigate();
   
 
 
@@ -84,6 +86,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess }
       } else {
         handleSuccess();
       }
+      // navigate to homepage
+      navigate('/');
     } catch (err: any) {
       setError(err.message || 'Invalid OTP. Please try again.');
       setOtp('');

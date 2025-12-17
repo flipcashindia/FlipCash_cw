@@ -321,8 +321,8 @@ const MyWalletPage: React.FC<MyWalletPageProps> = ({ onNavClick }) => {
                 </div>
                 
                 <button
-                  onClick={() => setShowWithdrawForm(true)}
-                  disabled={!is_profile_complete || loading}
+                  onClick={() => navigate('/wallet/withdraw')}
+                  // disabled={!is_profile_complete || loading}
                   className="px-8 py-3 font-bold rounded-xl transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
                     backgroundColor: 'white',

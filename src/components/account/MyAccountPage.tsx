@@ -110,13 +110,13 @@ const MyAccountPage: React.FC<MyAccountPageProps> = ({ username, onNavClick, onL
 
           {/* User Stats */}
           {isAuthenticated && user && (
-            <div className="mt-8 pt-6 border-t">
-              <h3 className="text-lg font-semibold mb-4" style={{ color: COLORS.text }}>
+            <div className="">
+              {/* <h3 className="text-lg font-semibold mb-4" style={{ color: COLORS.text }}>
                 Account Overview
-              </h3>
+              </h3> */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Profile Completion */}
-                <div 
+                {/* <div 
                   className="p-4 rounded-lg"
                   style={{ backgroundColor: `${COLORS.primary}20` }}
                 >
@@ -127,10 +127,10 @@ const MyAccountPage: React.FC<MyAccountPageProps> = ({ username, onNavClick, onL
                   >
                     {user.profile_completion_percentage || 0}%
                   </p>
-                </div>
+                </div> */}
 
                 {/* Account Status */}
-                <div 
+                {/* <div 
                   className="p-4 rounded-lg"
                   style={{ backgroundColor: `${COLORS.success}20` }}
                 >
@@ -141,18 +141,18 @@ const MyAccountPage: React.FC<MyAccountPageProps> = ({ username, onNavClick, onL
                   >
                     {user.is_active ? 'Active' : 'Inactive'}
                   </p>
-                </div>
+                </div> */}
 
                 {/* Phone Verified */}
-                <div className="bg-purple-50 p-4 rounded-lg">
+                {/* <div className="bg-purple-50 p-4 rounded-lg">
                   <p className="text-sm text-gray-600">Phone Verified</p>
                   <p className="text-2xl font-bold text-purple-600">
                     {user.is_phone_verified ? '✓ Yes' : '✗ No'}
                   </p>
-                </div>
+                </div> */}
 
                 {/* KYC Status */}
-                <div 
+                {/* <div 
                   className="p-4 rounded-lg"
                   style={{ 
                     backgroundColor: user.kyc_status === 'verified' 
@@ -175,7 +175,7 @@ const MyAccountPage: React.FC<MyAccountPageProps> = ({ username, onNavClick, onL
                   >
                     {user.kyc_status || 'Pending'}
                   </p>
-                </div>
+                </div> */}
               </div>
             </div>
           )}
