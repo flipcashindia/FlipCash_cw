@@ -26,7 +26,7 @@ const AboutUs: React.FC = () => {
               Welcome to FLIPCASH
             </h2>
             <p className="text-gray-700 text-lg leading-relaxed mb-4">
-              FLIPCASH is a <strong className="text-[#FEC925]">customer-first platform</strong> built to simplify how people sell, and repair electronic gadgets. Whether you're upgrading your tech or decluttering your drawer, we make it effortless to trade in pre-owned smartphones, laptops, smartwatches, tablets, and more—from the comfort of your home.
+              FLIPCASH is a <strong className="text-[#FEC925]">customer-first platform</strong> built to simplify how people sell, buy and repair electronic gadgets. Whether you're upgrading your tech or decluttering your drawer, we make it effortless to trade in pre-owned smartphones, laptops, smartwatches, tablets, and more—from the comfort of your home.
             </p>
             <p className="text-gray-700 text-lg leading-relaxed mb-4">
               Our process is <strong className="text-[#FEC925]">transparent, fast, and designed around your convenience</strong>. With competitive pricing, doorstep pickup, and instant payments, FLIPCASH ensures that every transaction is smooth, secure, and rewarding.
