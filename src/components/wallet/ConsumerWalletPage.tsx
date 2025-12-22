@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RefreshCw, ArrowUpRight, History, ChevronRight } from 'lucide-react';
 import { useWallet, useTransactions } from './useFinance';
-import { WalletBalanceCard, WalletStatsCard } from '../../components/wallet/WalletCard';
+import { WalletBalanceCard } from '../../components/wallet/WalletCard';
 import { 
   TransactionList, 
   TransactionFilters, 
@@ -94,7 +94,7 @@ const ConsumerWalletPage: React.FC = () => {
 
         {/* Wallet Balance Card */}
         {walletData && (
-          <div className="grid md:grid-cols-2 gap-4 mb-6">
+          <div className="grid md:grid-cols-1 gap-4 mb-6">
             <WalletBalanceCard
               wallet={walletData.wallet}
               userType="consumer"
