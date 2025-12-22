@@ -100,7 +100,7 @@ const ConsumerWalletPage: React.FC = () => {
               userType="consumer"
               onWithdraw={handleWithdraw}
             />
-            <WalletStatsCard statistics={walletData.statistics} />
+            {/* <WalletStatsCard statistics={walletData.statistics} /> */}
           </div>
         )}
 
