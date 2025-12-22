@@ -13,8 +13,8 @@ import {
   Wallet,
   AlertTriangle,
   X,
-  ChevronDown,
-  ChevronUp,
+  // ChevronDown,
+  // ChevronUp,
   Info,
   Plus,
 } from 'lucide-react';
@@ -38,6 +38,20 @@ interface DeviceAttribute {
   display_order: number;
   help_text: string | null;
 }
+
+
+interface DeviceVariant {
+  id: string;
+  storage: string;
+  ram: string;
+  color: string;
+  variant_price: string | null;
+  effective_price: string;
+  sku: string;
+  is_available: boolean;
+  stock_quantity: number;
+}
+
 interface EstimateResponse {
   estimate_id: string;
   estimate_number: string;
@@ -71,6 +85,7 @@ interface ModelData {
   id: string;
   name: string;
   thumbnail?: string;
+  base_price: string;
   storage_options: string[];
   ram_options: string[];
   color_options: string[];
@@ -104,7 +119,9 @@ const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ message, onDismiss }) => (
     </button>
   </motion.div>
 );
-//IMEI
+
+
+// --- Main DeviceStepper Component ---
 const DeviceStepper: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -117,11 +134,15 @@ const DeviceStepper: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const [modelDetails, setModelDetails] = useState<ModelData | null>(null);
+  const [variants, setVariants] = useState<DeviceVariant[]>([]);
+  const [selectedVariant, setSelectedVariant] = useState<DeviceVariant | null>(null);
+  const [showPrice, setShowPrice] = useState(false);
+
 
   const [groupedAttributes, setGroupedAttributes] = useState<Record<string, DeviceAttribute[]>>({});
   const [conditionResponses, setConditionResponses] = useState<Record<string, any>>({});
   
-  const [expandedOptionalSections, setExpandedOptionalSections] = useState<Record<string, boolean>>({});
+  // const [expandedOptionalSections, setExpandedOptionalSections] = useState<Record<string, boolean>>({});
 
   const [imei, setImei] = useState('');
   const [estimate, setEstimate] = useState<EstimateResponse | null>(null);
@@ -164,9 +185,10 @@ const DeviceStepper: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      const [modelRes, attrsRes] = await Promise.all([
+      const [modelRes, attrsRes, variantsRes] = await Promise.all([
         fetch(`${API_BASE_URL}/catalog/models/${id}/`),
-        fetch(`${API_BASE_URL}/catalog/models/${id}/attributes/`)
+        fetch(`${API_BASE_URL}/catalog/models/${id}/attributes/`),
+        fetch(`${API_BASE_URL}/catalog/variants/?model=${id}`)
       ]);
 
       if (!modelRes.ok) {
@@ -180,6 +202,27 @@ const DeviceStepper: React.FC = () => {
 
       const modelData: ModelData = await modelRes.json();
       const attrsData: DeviceAttribute[] = await attrsRes.json();
+
+
+      // Handle variants response
+      let variantsData: DeviceVariant[] = [];
+      console.log('variant res: ', variantsRes.ok);
+      console.log('variant :', variantsRes);
+      
+      if (variantsRes.ok) {
+        // FIX: Await the JSON once, store it, then use the variable
+        variantsData = await variantsRes.json();
+        
+        console.log('variant data : ', variantsData); // Now you can log the data safely
+        
+        // Filter only available variants
+        variantsData = variantsData.filter(v => v.is_available);
+        console.log('filtered variant data : ', variantsData)
+        setVariants(variantsData);
+        console.log('set variants length : ', variants.length)
+        console.log('set variants : ', variants)
+      }
+
 
       const defaultStorage = ['64 GB', '128GB', '256GB', '512GB'];
       const defaultRAM = ['4GB', '6GB', '8GB', '12GB'];
@@ -282,12 +325,27 @@ const DeviceStepper: React.FC = () => {
     setConditionResponses(prev => ({ ...prev, [name]: value }));
   };
 
-  const toggleOptionalSection = (groupName: string) => {
-    setExpandedOptionalSections(prev => ({
-      ...prev,
-      [groupName]: !prev[groupName]
-    }));
+  // const toggleOptionalSection = (groupName: string) => {
+  //   setExpandedOptionalSections(prev => ({
+  //     ...prev,
+  //     [groupName]: !prev[groupName]
+  //   }));
+  // };
+
+
+  const handleVariantSelection = (variant: DeviceVariant) => {
+    setSelectedVariant(variant);
+    setShowPrice(true);
+    
+    // Set the responses for the estimate API
+    handleResponseChange('storage', variant.storage);
+    handleResponseChange('ram', variant.ram);
+    if (variant.color) {
+      handleResponseChange('color', variant.color);
+    }
   };
+
+  
 
   const handleNext = async () => {
     setError(null);
@@ -298,14 +356,33 @@ const DeviceStepper: React.FC = () => {
         return;
       }
       
-      if (modelDetails.storage_options.length > 0 && !conditionResponses['storage']) {
-        setError('Please select a storage option.');
-        return;
-      }
-      if (modelDetails.ram_options.length > 0 && !conditionResponses['ram']) {
-        setError('Please select a RAM option.');
-        return;
-      }
+      // Check if variants exist
+      if (variants.length > 0) {
+        // Variants exist - must select one
+        if (!selectedVariant) {
+            setError('Please select a device variant.');
+            return;
+          }
+        } else {
+          // No variants - check manual selections
+          if (modelDetails.storage_options.length > 0 && !conditionResponses['storage']) {
+            setError('Please select a storage option.');
+            return;
+          }
+          if (modelDetails.ram_options.length > 0 && !conditionResponses['ram']) {
+            setError('Please select a RAM option.');
+            return;
+          }
+        }
+
+      // if (modelDetails.storage_options.length > 0 && !conditionResponses['storage']) {
+      //   setError('Please select a storage option.');
+      //   return;
+      // }
+      // if (modelDetails.ram_options.length > 0 && !conditionResponses['ram']) {
+      //   setError('Please select a RAM option.');
+      //   return;
+      // }
       // if (modelDetails.color_options.length > 0 && !conditionResponses['color']) {
       //   setError('Please select a color option.');
       //   return;
@@ -659,8 +736,8 @@ const DeviceStepper: React.FC = () => {
 
   const renderAttributeGroup = (groupName: string, attrs: DeviceAttribute[]) => {
     const requiredAttrs = attrs.filter(a => a.is_required);
-    const optionalAttrs = attrs.filter(a => !a.is_required);
-    const isExpanded = expandedOptionalSections[groupName] || false;
+    // const optionalAttrs = attrs.filter(a => !a.is_required);
+    // const isExpanded = expandedOptionalSections[groupName] || false;
 
     return (
       <fieldset key={groupName} className="space-y-4 md:space-y-6">
@@ -686,7 +763,7 @@ const DeviceStepper: React.FC = () => {
           </div>
         ))}
 
-        {optionalAttrs.length > 0 && (
+        {/* {optionalAttrs.length > 0 && (
           <div className="mt-3 md:mt-4">
             <button
               type="button"
@@ -738,7 +815,7 @@ const DeviceStepper: React.FC = () => {
               )}
             </AnimatePresence>
           </div>
-        )}
+        )} */}
       </fieldset>
     );
   };
@@ -794,78 +871,146 @@ const DeviceStepper: React.FC = () => {
           <div className="bg-white p-4 sm:p-5 md:p-6 lg:p-8 rounded-xl md:rounded-2xl shadow-xl md:shadow-2xl border-2 border-[#FEC925]/20">
             <AnimatePresence mode="wait">
 
-             {/* Step 1: Variant Selection - Split Layout for Desktop */}
-            {step === 1 && modelDetails && (
-              <motion.div 
-                key="step1" 
-                initial={{ opacity: 0 }} 
-                animate={{ opacity: 1 }} 
-                exit={{ opacity: 0 }} 
-                className="space-y-4 md:space-y-6"
-              >
-                {/* Header */}
-                <div className="text-center mb-4 md:mb-6">
-                  <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-[#1C1C1B] mb-1 md:mb-2">
-                    Select Device Variant
-                  </h2>
-                  <p className="text-sm sm:text-base md:text-lg text-gray-600">{modelDetails.name}</p>
-                </div>
+            {/* Step 1: Variant Selection - New UI */}
+              {step === 1 && modelDetails && (
+                <motion.div 
+                  key="step1" 
+                  initial={{ opacity: 0 }} 
+                  animate={{ opacity: 1 }} 
+                  exit={{ opacity: 0 }} 
+                  className="space-y-4 md:space-y-6"
+                >
+                  {/* Header */}
+                  <div className="text-center mb-4 md:mb-6">
+                    <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-[#1C1C1B] mb-1 md:mb-2">
+                      {modelDetails.name}
+                    </h2>
+                  </div>
 
-                {/* Main Content - Responsive Layout */}
-                <div className="flex flex-col md:flex-row md:gap-6 lg:gap-8">
-                  {/* Left: Image Section - Mobile: Full Width, Desktop: 40% */}
-                  <div className="w-full md:w-2/5 lg:w-2/5 mb-4 md:mb-0">
-                    <div className="sticky top-4">
-                      <div className="w-full aspect-square h-full bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg md:rounded-xl lg:rounded-2xl flex items-center justify-center p-2 border-2 border-gray-200 shadow-lg">
-                        <img
-                          src={modelDetails.images?.[0]?.image_url || modelFromState?.thumbnail}
-                          alt={modelDetails.name}
-                          className="max-h-full max-w-full object-contain drop-shadow-2xl"
-                        />
-                      </div>
-                      
-                      {/* Device Info Badge - Desktop Only */}
-                      <div className="hidden md:block mt-4 p-4 bg-gradient-to-r from-[#FEC925]/10 to-[#1B8A05]/10 rounded-xl border-2 border-[#FEC925]/20">
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="w-2 h-2 bg-[#1B8A05] rounded-full animate-pulse"></div>
-                          <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Quick Info</p>
-                        </div>
-                        <h3 className="font-bold text-lg text-[#1C1C1B] mb-1">{modelDetails.name}</h3>
-                        <div className="flex flex-wrap gap-2 mt-3">
-                          {modelDetails.storage_options.length > 0 && (
-                            <span className="text-xs px-2 py-1 bg-white rounded-full border border-gray-200">
-                              {modelDetails.storage_options.length} Storage Options
-                            </span>
-                          )}
-                          {modelDetails.ram_options.length > 0 && (
-                            <span className="text-xs px-2 py-1 bg-white rounded-full border border-gray-200">
-                              {modelDetails.ram_options.length} RAM Options
-                            </span>
-                          )}
-                          {modelDetails.color_options.length > 0 && (
-                            <span className="text-xs px-2 py-1 bg-white rounded-full border border-gray-200">
-                              {modelDetails.color_options.length} Colors
-                            </span>
-                          )}
+                  {/* Main Content Layout */}
+                  <div className="flex flex-col md:flex-row md:gap-6 lg:gap-8">
+                    {/* Left: Image Section */}
+                    <div className="w-full md:w-2/5 lg:w-2/5 mb-4 md:mb-0">
+                      <div className="sticky top-4">
+                        <div className="w-full aspect-square bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg md:rounded-xl lg:rounded-2xl flex items-center justify-center p-4 border-2 border-gray-200 shadow-lg">
+                          <img
+                            src={modelDetails.images?.[0]?.image_url || modelFromState?.thumbnail}
+                            alt={modelDetails.name}
+                            className="max-h-full max-w-full object-contain drop-shadow-2xl"
+                          />
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Right: Variant Options - Mobile: Full Width, Desktop: 60% */}
-                  <div className="w-full md:w-3/5 lg:w-3/5 space-y-4 md:space-y-6">
-                    {/* Storage Options */}
-                    {renderVariantOptions('Storage', 'storage', modelDetails.storage_options)}
-                    
-                    {/* RAM Options */}
-                    {renderVariantOptions('RAM', 'ram', modelDetails.ram_options)}
-                    
-                    {/* Color Options
-                    {renderVariantOptions('Color', 'color', modelDetails.color_options)} */}
+                    {/* Right: Variant Options */}
+                    <div className="w-full md:w-3/5 lg:w-3/5">
+                      {/* Choose a variant heading */}
+                      <div className="mb-4">
+                        <h3 className="text-lg md:text-xl font-bold text-gray-600 mb-1">Choose a variant</h3>
+                      </div>
+
+                      {/* Variants exist - Show variant buttons */}
+                      {variants.length > 0 ? (
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {variants.map((variant) => {
+                              const isSelected = selectedVariant?.id === variant.id;
+                              const displayText = `${variant.ram}/${variant.storage}${variant.color ? ` ${variant.color}` : ''}`;
+                              
+                              return (
+                                <button
+                                  key={variant.id}
+                                  type="button"
+                                  onClick={() => handleVariantSelection(variant)}
+                                  className={`group relative p-4 border-2 rounded-lg text-center transition-all font-semibold overflow-hidden ${
+                                    isSelected
+                                      ? 'bg-white border-gray-800 ring-2 ring-gray-800 text-[#1C1C1B] shadow-md'
+                                      : 'bg-white border-gray-300 hover:border-gray-600 text-gray-700'
+                                  }`}
+                                >
+                                  <span className="relative z-10 block text-sm md:text-base">
+                                    {displayText}
+                                  </span>
+                                  
+                                  {isSelected && (
+                                    <motion.div
+                                      initial={{ scale: 0 }}
+                                      animate={{ scale: 1 }}
+                                      className="absolute top-1 right-1 w-5 h-5 bg-gray-800 rounded-full flex items-center justify-center"
+                                    >
+                                      <CheckCircle size={14} className="text-white" />
+                                    </motion.div>
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          {/* Show price when variant is selected */}
+                          <AnimatePresence>
+                            {showPrice && selectedVariant && (
+                              <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                exit={{ opacity: 0, height: 0 }}
+                                className="bg-gradient-to-r from-gray-50 to-gray-100 p-4 rounded-lg border-2 border-gray-200"
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <p className="text-sm text-gray-600 mb-1">Base Price</p>
+                                    <p className="text-2xl md:text-3xl font-bold text-[#1B8A05]">
+                                      ₹{parseFloat(selectedVariant.effective_price).toLocaleString('en-IN')}
+                                    </p>
+                                  </div>
+                                  <div className="text-right">
+                                    <p className="text-xs text-gray-500">Selected:</p>
+                                    <p className="text-sm font-semibold text-gray-700">
+                                      {selectedVariant.ram}/{selectedVariant.storage}
+                                    </p>
+                                  </div>
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      ) : (
+                        /* No variants - Show manual selection */
+                        <div className="space-y-6">
+                          {renderVariantOptions('Storage', 'storage', modelDetails.storage_options)}
+                          {renderVariantOptions('RAM', 'ram', modelDetails.ram_options)}
+                          
+                          {/* Show base price for manual selection */}
+                          {(conditionResponses['storage'] || conditionResponses['ram']) && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: 'auto' }}
+                              className="bg-gradient-to-r from-gray-50 to-gray-100 p-4 rounded-lg border-2 border-gray-200"
+                            >
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm text-gray-600 mb-1">Base Price</p>
+                                  <p className="text-2xl md:text-3xl font-bold text-[#1B8A05]">
+                                    ₹{parseFloat(modelDetails.base_price).toLocaleString('en-IN')}
+                                  </p>
+                                </div>
+                                <div className="text-right">
+                                  <p className="text-xs text-gray-500">Selected:</p>
+                                  <p className="text-sm font-semibold text-gray-700">
+                                    {conditionResponses['ram'] || '-'}/{conditionResponses['storage'] || '-'}
+                                  </p>
+                                </div>
+                              </div>
+                            </motion.div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </motion.div>
-            )}
+                </motion.div>
+              )}
+
+
+            
               {/* Step 2: Device Condition */}
               {step === 2 && (
                 <motion.div key="step2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4 md:space-y-8">
