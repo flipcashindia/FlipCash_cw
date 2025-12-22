@@ -220,7 +220,7 @@ const AccountDetailsPage: React.FC<AccountDetailsPageProps> = ({ onNavClick }) =
 <div className="mt-10 pt-8 border-t-2 border-[#FEC925]/20">
   <h3 className="font-bold text-xl text-[#1C1C1B] mb-6">Account Information</h3>
   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-    <div className="bg-gradient-to-br from-[#F0F7F6] to-[#EAF6F4] p-5 rounded-xl border-2 border-[#1B8A05]/20">
+    {/* <div className="bg-gradient-to-br from-[#F0F7F6] to-[#EAF6F4] p-5 rounded-xl border-2 border-[#1B8A05]/20">
       <p className="text-sm text-gray-600 mb-1">Account Status</p>
       <p className="text-2xl font-bold text-[#1B8A05]">
         {user?.is_active ? '✓ Active' : '✗ Inactive'}
@@ -232,7 +232,7 @@ const AccountDetailsPage: React.FC<AccountDetailsPageProps> = ({ onNavClick }) =
       <p className="text-2xl font-bold text-[#FEC925]">
         {user?.profile_completed ? '✓ Complete' : '⚠ Incomplete'}
       </p>
-    </div>
+    </div> */}
     
     <div className="bg-gradient-to-br from-[#F0F7F6] to-[#EAF6F4] p-5 rounded-xl border-2 border-[#1B8A05]/20">
       <p className="text-sm text-gray-600 mb-1 flex items-center gap-2">
