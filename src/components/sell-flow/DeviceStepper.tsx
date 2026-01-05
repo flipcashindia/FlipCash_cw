@@ -14,6 +14,7 @@ import {
   AlertTriangle,
   X,
   Plus,
+  Ban, // Added for "Available Soon" icon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as authService from '../../api/services/authService';
@@ -129,7 +130,6 @@ const DeviceStepper: React.FC = () => {
   const { modelId: modelIdFromState, model: modelFromState } = (location.state || {}) as LocationState;
   const modelId = modelIdFromState || modelFromState?.id;
   
-  // Steps: 1=Variant, 2=Condition(Paginated), 3=Estimate, 4=Pickup
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -139,13 +139,11 @@ const DeviceStepper: React.FC = () => {
   const [selectedVariant, setSelectedVariant] = useState<DeviceVariant | null>(null);
   const [showPrice, setShowPrice] = useState(false);
 
-  // Attributes Grouping
   const [groupedAttributes, setGroupedAttributes] = useState<Record<string, DeviceAttribute[]>>({});
   const [groupKeys, setGroupKeys] = useState<string[]>([]); 
   const [activeGroupIndex, setActiveGroupIndex] = useState(0); 
 
   const [conditionResponses, setConditionResponses] = useState<Record<string, any>>({});
-  
   const [estimate, setEstimate] = useState<EstimateResponse | null>(null);
   
   const [addresses, setAddresses] = useState<UserAddress[]>([]);
@@ -171,6 +169,15 @@ const DeviceStepper: React.FC = () => {
     { value: 'evening', label: 'Evening (5PM - 9PM)' },
   ];
 
+  // Helper to determine if we should block the user (No variants + No base price)
+  const isSellable = () => {
+    if (!modelDetails) return false;
+    // Has variants OR has a base price > 0
+    const hasVariants = variants.length > 0;
+    const hasBasePrice = modelDetails.base_price && parseFloat(modelDetails.base_price) > 0;
+    return hasVariants || hasBasePrice;
+  };
+
   useEffect(() => {
     if (modelId) {
       loadStepperData(modelId);
@@ -180,7 +187,7 @@ const DeviceStepper: React.FC = () => {
     }
   }, [modelId]);
 
-  // --- NEW: Auto-select single variant ---
+  // Auto-select if ONLY ONE variant
   useEffect(() => {
     if (variants.length === 1 && !selectedVariant) {
         handleVariantSelection(variants[0]);
@@ -317,6 +324,11 @@ const DeviceStepper: React.FC = () => {
     if (step === 1) {
       if (!modelDetails) return;
       
+      // If NOT sellable (No variants, No base price), stop here.
+      if (!isSellable()) {
+        return;
+      }
+      
       if (variants.length > 0) {
         if (!selectedVariant) {
             setError('Please select a device variant.');
@@ -336,7 +348,7 @@ const DeviceStepper: React.FC = () => {
       setStep(2);
     }
 
-    // STEP 2: CONDITION ATTRIBUTES (PAGINATED)
+    // STEP 2: CONDITION ATTRIBUTES
     else if (step === 2) {
       const currentGroupName = groupKeys[activeGroupIndex];
       const currentGroupAttrs = groupedAttributes[currentGroupName];
@@ -507,28 +519,18 @@ const DeviceStepper: React.FC = () => {
   const getNext5Days = () => {
     const days = [];
     const today = new Date();
-    
     for (let i = 1; i <= 5; i++) {
       const date = new Date(today);
       date.setDate(today.getDate() + i);
       const value = date.toISOString().split('T')[0]; 
-      
       const dayName = date.toLocaleDateString('en-IN', { weekday: 'short' });
       const dateNum = date.getDate();
       const monthName = date.toLocaleDateString('en-IN', { month: 'short' });
-      
       let label = '';
       if (i === 1) label = 'Tomorrow';
       else if (i === 2) label = 'Day After';
       else label = `${dayName}, ${dateNum} ${monthName}`;
-      
-      days.push({ 
-        value, 
-        label, 
-        dayName,
-        dateNum,
-        monthName 
-      });
+      days.push({ value, label, dayName, dateNum, monthName });
     }
     return days;
   };
@@ -751,18 +753,37 @@ const DeviceStepper: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Right: Variant Options */}
+                    {/* Right: Variant Options / Info */}
                     <div className="w-full md:w-3/5 lg:w-3/5">
-                      <div className="mb-4">
-                        <h3 className="text-lg md:text-xl font-bold text-gray-600 mb-1">Choose a variant</h3>
-                      </div>
-
-                      {variants.length > 0 ? (
+                      
+                      {/* CASE 1: EXACTLY ONE VARIANT (HIDE SELECTION, SHOW SUMMARY) */}
+                      {variants.length === 1 && selectedVariant ? (
+                        <div className="space-y-6">
+                          <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-6 rounded-xl border-2 border-gray-200 text-center">
+                            <h3 className="text-xl font-bold text-gray-800 mb-2">Device Specification</h3>
+                            <p className="text-2xl font-bold text-[#1C1C1B] mb-4">
+                              {selectedVariant.ram} / {selectedVariant.storage}
+                            </p>
+                            
+                            <div className="flex flex-col items-center justify-center border-t border-gray-300 pt-4">
+                              <p className="text-sm text-gray-600 mb-1 font-medium">Base Price</p>
+                              <p className="text-4xl font-bold text-[#1B8A05]">
+                                ₹{parseFloat(selectedVariant.effective_price).toLocaleString('en-IN')}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ) : 
+                      
+                      /* CASE 2: MULTIPLE VARIANTS (SHOW BUTTONS) */
+                      variants.length > 1 ? (
                         <div className="space-y-4">
+                          <div className="mb-4">
+                            <h3 className="text-lg md:text-xl font-bold text-gray-600 mb-1">Choose a variant</h3>
+                          </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                             {variants.map((variant) => {
                               const isSelected = selectedVariant?.id === variant.id;
-                              // UPDATED: Removed Color from Display Text
                               const displayText = `${variant.ram}/${variant.storage}`;
                               
                               return (
@@ -820,8 +841,14 @@ const DeviceStepper: React.FC = () => {
                             )}
                           </AnimatePresence>
                         </div>
-                      ) : (
+                      ) : 
+                      
+                      /* CASE 3: NO VARIANTS BUT HAS BASE PRICE (SHOW MANUAL SELECTION) */
+                      (modelDetails.base_price && parseFloat(modelDetails.base_price) > 0) ? (
                         <div className="space-y-6">
+                           <div className="mb-4">
+                            <h3 className="text-lg md:text-xl font-bold text-gray-600 mb-1">Device Details</h3>
+                          </div>
                           {renderVariantOptions('Storage', 'storage', modelDetails.storage_options)}
                           {renderVariantOptions('RAM', 'ram', modelDetails.ram_options)}
                           
@@ -848,7 +875,21 @@ const DeviceStepper: React.FC = () => {
                             </motion.div>
                           )}
                         </div>
+                      ) : 
+                      
+                      /* CASE 4: NO VARIANTS & NO BASE PRICE (SHOW ERROR) */
+                      (
+                        <div className="flex flex-col items-center justify-center py-12 px-4 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
+                          <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mb-4">
+                            <Ban size={32} className="text-gray-500" />
+                          </div>
+                          <h3 className="text-xl font-bold text-gray-700 mb-2">Available Soon</h3>
+                          <p className="text-center text-gray-500 max-w-xs">
+                            This device will be available soon for sale. Please check back later.
+                          </p>
+                        </div>
                       )}
+
                     </div>
                   </div>
                 </motion.div>
@@ -1244,43 +1285,45 @@ const DeviceStepper: React.FC = () => {
             </AnimatePresence>
 
             {/* Navigation Buttons */}
-            <div className="flex gap-2 md:gap-4 mt-4 md:mt-8">
-              {step > 1 && (
-                <button 
-                  onClick={handleBack} 
-                  disabled={loading} 
-                  className="flex items-center gap-1.5 md:gap-2 px-4 md:px-6 py-3 md:py-4 border-2 border-gray-300 rounded-lg md:rounded-xl hover:bg-gray-100 font-bold text-sm md:text-lg text-[#1C1C1B] transition disabled:opacity-50"
-                >
-                  <ArrowLeft size={18} className="md:w-5 md:h-5" />
-                  <span className="hidden sm:inline">Back</span>
-                </button>
-              )}
-              <button
-                onClick={handleNext}
-                disabled={loading}
-                className="flex-1 flex items-center justify-center gap-2 md:gap-3 px-4 md:px-6 py-3 md:py-4 bg-gradient-to-r from-[#FEC925] to-[#1B8A05] text-[#1C1C1B] rounded-lg md:rounded-xl hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed font-bold text-sm md:text-lg shadow-lg transition"
-              >
-                {loading ? (
-                  <>
-                    <Loader2  size={20} className="animate-spin md:w-6 md:h-6" /> Processing...
-                  </>
-                ) : step === 1 ? (
-                  <>Next: Condition <ArrowRight size={18} className="md:w-5 md:h-5" /></>
-                ) : step === 2 ? (
-                  activeGroupIndex < groupKeys.length - 1 ? (
-                    <>Next <ArrowRight size={18} className="md:w-5 md:h-5" /></>
-                  ) : (
-                    'Get My Estimate'
-                  )
-                ) : step === 3 ? (
-                  <>Schedule Pickup <ArrowRight size={18} className="md:w-5 md:h-5" /></>
-                ) : step === 4 ? (
-                  'Confirm & Create Lead'
-                ) : (
-                  ''
+            {isSellable() && (
+              <div className="flex gap-2 md:gap-4 mt-4 md:mt-8">
+                {step > 1 && (
+                  <button 
+                    onClick={handleBack} 
+                    disabled={loading} 
+                    className="flex items-center gap-1.5 md:gap-2 px-4 md:px-6 py-3 md:py-4 border-2 border-gray-300 rounded-lg md:rounded-xl hover:bg-gray-100 font-bold text-sm md:text-lg text-[#1C1C1B] transition disabled:opacity-50"
+                  >
+                    <ArrowLeft size={18} className="md:w-5 md:h-5" />
+                    <span className="hidden sm:inline">Back</span>
+                  </button>
                 )}
-              </button>
-            </div>
+                <button
+                  onClick={handleNext}
+                  disabled={loading}
+                  className="flex-1 flex items-center justify-center gap-2 md:gap-3 px-4 md:px-6 py-3 md:py-4 bg-gradient-to-r from-[#FEC925] to-[#1B8A05] text-[#1C1C1B] rounded-lg md:rounded-xl hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed font-bold text-sm md:text-lg shadow-lg transition"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2  size={20} className="animate-spin md:w-6 md:h-6" /> Processing...
+                    </>
+                  ) : step === 1 ? (
+                    <>Next: Condition <ArrowRight size={18} className="md:w-5 md:h-5" /></>
+                  ) : step === 2 ? (
+                    activeGroupIndex < groupKeys.length - 1 ? (
+                      <>Next <ArrowRight size={18} className="md:w-5 md:h-5" /></>
+                    ) : (
+                      'Get My Estimate'
+                    )
+                  ) : step === 3 ? (
+                    <>Schedule Pickup <ArrowRight size={18} className="md:w-5 md:h-5" /></>
+                  ) : step === 4 ? (
+                    'Confirm & Create Lead'
+                  ) : (
+                    ''
+                  )}
+                </button>
+              </div>
+            )}
           </div>
         </motion.div>
       </div>
