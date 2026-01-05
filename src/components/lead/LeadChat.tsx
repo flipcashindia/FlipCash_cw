@@ -27,7 +27,7 @@ interface LeadChatProps {
   partnerAssigned: boolean;
 }
 
-const LeadChat: React.FC<LeadChatProps> = ({ leadId,  partnerAssigned }) => {
+const LeadChat: React.FC<LeadChatProps> = ({ leadId, partnerAssigned }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
