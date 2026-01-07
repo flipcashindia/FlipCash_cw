@@ -760,10 +760,15 @@ const DeviceStepper: React.FC = () => {
                       {variants.length === 1 && selectedVariant ? (
                         <div className="space-y-6">
                           <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-6 rounded-xl border-2 border-gray-200 text-center">
-                            <h3 className="text-xl font-bold text-gray-800 mb-2">Device Specification</h3>
-                            <p className="text-2xl font-bold text-[#1C1C1B] mb-4">
-                              {selectedVariant.ram} / {selectedVariant.storage}
-                            </p>
+                            {variants.length > 1 && (
+                              <>
+                              <h3 className="text-xl font-bold text-gray-800 mb-2">Device Specification</h3>
+                                <p className="text-2xl font-bold text-[#1C1C1B] mb-4">
+                                  {selectedVariant.ram} / {selectedVariant.storage}
+                                </p>
+                                </>
+                                ) 
+                                }
                             
                             <div className="flex flex-col items-center justify-center border-t border-gray-300 pt-4">
                               <p className="text-sm text-gray-600 mb-1 font-medium">Base Price</p>
@@ -775,7 +780,7 @@ const DeviceStepper: React.FC = () => {
                         </div>
                       ) : 
                       
-                      /* CASE 2: MULTIPLE VARIANTS (SHOW BUTTONS) */
+                      /* CASE 2: MULTIPLE VARIANTS (SHOW BUTTONS) Device specification*/
                       variants.length > 1 ? (
                         <div className="space-y-4">
                           <div className="mb-4">
