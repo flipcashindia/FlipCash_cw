@@ -522,7 +522,7 @@ const ContactUs: React.FC = () => {
           <div className="flex flex-wrap justify-center items-center gap-8 text-white">
             <a href="tel:+919654786218" className="flex items-center gap-2 hover:text-[#FEC925] transition-colors">
               <Phone className="w-5 h-5" />
-              <span className="font-semibold">+91 96547 86218</span>
+              <span className="font-semibold">+91 9123228577</span>
             </a>
             <span className="hidden md:block text-gray-600">|</span>
             <a href="mailto:support@flipcash.in" className="flex items-center gap-2 hover:text-[#FEC925] transition-colors">
@@ -703,10 +703,9 @@ const ContactUs: React.FC = () => {
                   <ContactCard 
                     icon={<Phone size={24} />} 
                     title="Call Us"
-                    href="tel:+919654786218"
+                    href="tel:+919123228577"
                     delay={0.2}
                   >
-                    <p className="font-semibold">+91 96547 86218</p>
                     <p className="font-semibold">+91 91232 28577</p>
                   </ContactCard>
                   
