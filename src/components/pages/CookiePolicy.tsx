@@ -56,8 +56,8 @@ const CookiePolicy: React.FC = () => {
               <Phone className="w-5 h-5 text-black" />
               <div>
                 <p className="font-semibold text-black">Support Phone</p>
-                <a href="tel:+919654786218" className="text-sm text-black/80 hover:text-black">
-                  +91 96547 86218
+                <a href="tel:+919123228577" className="text-sm text-black/80 hover:text-black">
+                  +91 9123228577
                 </a>
               </div>
             </div>
@@ -604,8 +604,8 @@ const CookiePolicy: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-gray-300 mb-1">📞 Phone:</p>
-                  <a href="tel:+919654786218" className="text-[#FEC925] hover:text-yellow-300">
-                    +91 96547 86218
+                  <a href="tel:+919123228577" className="text-[#FEC925] hover:text-yellow-300">
+                    +91 9123228577
                   </a>
                 </div>
               </div>

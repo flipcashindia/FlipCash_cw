@@ -570,11 +570,11 @@ const Career: React.FC = () => {
               careers@flipcash.in
             </a>
             <a
-              href="tel:+919654786218"
+              href="tel:+919123228577"
               className="bg-white text-black px-8 py-4 rounded-lg font-bold text-lg hover:bg-gray-100 transition-colors duration-300 inline-flex items-center justify-center"
             >
               <Phone className="w-5 h-5 mr-2" />
-              +91 96547 86218
+              +91 9123228577
             </a>
           </div>
         </div>

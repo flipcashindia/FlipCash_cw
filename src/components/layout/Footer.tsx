@@ -216,9 +216,9 @@ const Footer: React.FC = () => {
               </ContactItem>
               <ContactItem 
                 icon={<Phone size={20} />}
-                href="tel:+919654786218"
+                href="tel:+919123228577"
               >
-                +91 9654 786 218
+                +91 9123228577
               </ContactItem>
               <a 
                 href="https://maps.google.com/?q=7th+Floor,+Unit+No.+703,+Palm+Court,+Mehrauli+Gurgaon+Road,+Sukhrali+Chowk,+Sector+16,+Gurugram,+Haryana+122007" 
