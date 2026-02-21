@@ -194,6 +194,65 @@ const DeviceStepper: React.FC = () => {
     }
   }, [variants]);
 
+  // const loadStepperData = async (id: string) => {
+  //   try {
+  //     setLoading(true);
+  //     setError(null);
+
+  //     const [modelRes, attrsRes, variantsRes] = await Promise.all([
+  //       fetch(`${API_BASE_URL}/catalog/models/${id}/`),
+  //       fetch(`${API_BASE_URL}/catalog/models/${id}/attributes/`),
+  //       fetch(`${API_BASE_URL}/catalog/variants/?model=${id}`)
+  //     ]);
+
+  //     if (!modelRes.ok) throw new Error(`Failed to load model details`);
+  //     if (!attrsRes.ok) throw new Error(`Failed to load device attributes`);
+
+  //     const modelData: ModelData = await modelRes.json();
+  //     const attrsData: DeviceAttribute[] = await attrsRes.json();
+
+  //     let variantsData: DeviceVariant[] = [];
+  //     if (variantsRes.ok) {
+  //       variantsData = await variantsRes.json();
+  //       variantsData = variantsData.filter(v => v.is_available);
+  //       setVariants(variantsData);
+  //     }
+
+  //     const defaultStorage = ['64 GB', '128GB', '256GB', '512GB'];
+  //     const defaultRAM = ['4GB', '6GB', '8GB', '12GB'];
+
+  //     const processedModelDetails: ModelData = {
+  //       ...modelData,
+  //       storage_options: (modelData.storage_options && modelData.storage_options.length > 0)
+  //         ? modelData.storage_options
+  //         : defaultStorage,
+  //       ram_options: (modelData.ram_options && modelData.ram_options.length > 0)
+  //         ? modelData.ram_options
+  //         : defaultRAM,
+  //     };
+
+  //     setModelDetails(processedModelDetails);
+
+  //     const sorted = attrsData.sort((a, b) => a.display_order - b.display_order);
+  //     const groups = sorted.reduce((acc: Record<string, DeviceAttribute[]>, attr) => {
+  //       const type = capitalize(attr.attribute_type || 'other');
+  //       if (!acc[type]) acc[type] = [];
+  //       acc[type].push(attr);
+  //       return acc;
+  //     }, {});
+      
+  //     setGroupedAttributes(groups);
+  //     setGroupKeys(Object.keys(groups)); 
+
+  //   } catch (error: any) {
+  //     console.error('Failed to load stepper data:', error);
+  //     setError(error.message);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+
   const loadStepperData = async (id: string) => {
     try {
       setLoading(true);
@@ -202,19 +261,31 @@ const DeviceStepper: React.FC = () => {
       const [modelRes, attrsRes, variantsRes] = await Promise.all([
         fetch(`${API_BASE_URL}/catalog/models/${id}/`),
         fetch(`${API_BASE_URL}/catalog/models/${id}/attributes/`),
-        fetch(`${API_BASE_URL}/catalog/variants/?model=${id}`)
+        // 👇 CHANGED: Use the nested model variants endpoint which returns a flat list
+        fetch(`${API_BASE_URL}/catalog/models/${id}/variants/`) 
       ]);
 
       if (!modelRes.ok) throw new Error(`Failed to load model details`);
       if (!attrsRes.ok) throw new Error(`Failed to load device attributes`);
 
       const modelData: ModelData = await modelRes.json();
-      const attrsData: DeviceAttribute[] = await attrsRes.json();
+      
+      // 👇 CHANGED: Safely extract attributes whether paginated (.results) or direct
+      const rawAttrs = await attrsRes.json();
+      const attrsData: DeviceAttribute[] = Array.isArray(rawAttrs) 
+        ? rawAttrs 
+        : (rawAttrs.results || []);
 
       let variantsData: DeviceVariant[] = [];
       if (variantsRes.ok) {
-        variantsData = await variantsRes.json();
-        variantsData = variantsData.filter(v => v.is_available);
+        const rawVariants = await variantsRes.json();
+        
+        // 👇 CHANGED: Safely extract variants whether paginated (.results) or direct
+        variantsData = Array.isArray(rawVariants) 
+          ? rawVariants 
+          : (rawVariants.results || []);
+          
+        variantsData = variantsData.filter((v: DeviceVariant) => v.is_available);
         setVariants(variantsData);
       }
 
@@ -252,17 +323,49 @@ const DeviceStepper: React.FC = () => {
     }
   };
 
+  // const loadAddresses = async () => {
+  //   try {
+  //     setLoading(true);
+  //     setError(null);
+  //     const token = localStorage.getItem('access_token');
+  //     if (!token) throw new Error("You must be logged in to select an address.");
+  //     const res = await fetch(`${API_BASE_URL}/accounts/addresses/`, {
+  //       headers: { 'Authorization': `Bearer ${token}` }
+  //     });
+  //     if (!res.ok) throw new Error(`Failed to load addresses`);
+  //     const data: UserAddress[] = await res.json();
+  //     setAddresses(data);
+  //     const defaultAddr = data.find((a) => a.is_default);
+  //     if (defaultAddr) setSelectedAddressId(defaultAddr.id);
+  //     return true;
+  //   } catch (error: any) {
+  //     setError(error.message);
+  //     return false;
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
   const loadAddresses = async () => {
     try {
       setLoading(true);
       setError(null);
       const token = localStorage.getItem('access_token');
       if (!token) throw new Error("You must be logged in to select an address.");
+      
       const res = await fetch(`${API_BASE_URL}/accounts/addresses/`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      
       if (!res.ok) throw new Error(`Failed to load addresses`);
-      const data: UserAddress[] = await res.json();
+      
+      const rawData = await res.json();
+      
+      // 👇 SAFELY EXTRACT ARRAY: Handles both paginated (.results) and unpaginated responses
+      const data: UserAddress[] = Array.isArray(rawData) 
+        ? rawData 
+        : (rawData.results || []);
+        
       setAddresses(data);
       const defaultAddr = data.find((a) => a.is_default);
       if (defaultAddr) setSelectedAddressId(defaultAddr.id);
