@@ -16,6 +16,8 @@ import CancelLeadModal from '../lead/CancelLeadModal';
 import RescheduleModal from '../lead/RescheduleModal';
 import RateLeadModal from '../lead/RateLeadModal';
 import LeadDisputesSection from '../lead/LeadDisputesSection';
+import LeadRatingsDisplay from '../lead/LeadRatingsDisplay';
+
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
 
@@ -420,24 +422,49 @@ const safeStringify = (value: any): string => {
     }
   };
 
-  const checkRatingStatus = async (leadId: string) => {
-    try {
-      const token = localStorage.getItem('access_token');
-      if (!token) return;
+  // const checkRatingStatus = async (leadId: string) => {
+  //   try {
+  //     const token = localStorage.getItem('access_token');
+  //     if (!token) return;
 
-      const userId = localStorage.getItem('user_id');
-      const res = await fetch(`${API_BASE_URL}/ops/ratings/?lead=${leadId}&rater=${userId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+  //     const userId = localStorage.getItem('user_id');
+  //     const res = await fetch(`${API_BASE_URL}/ops/ratings/?lead=${leadId}&rater=${userId}`, {
+  //       headers: { 'Authorization': `Bearer ${token}` }
+  //     });
 
-      if (res.ok) {
-        const data = await res.json();
-        setHasRated((data.results || data || []).length > 0);
-      }
-    } catch (err) {
-      console.error('Failed to check rating:', err);
+  //     if (res.ok) {
+  //       const data = await res.json();
+  //       setHasRated((data.results || data || []).length > 0);
+  //     }
+  //   } catch (err) {
+  //     console.error('Failed to check rating:', err);
+  //   }
+  // };
+
+
+const checkRatingStatus = async (leadId: string) => {
+  try {
+    const token = localStorage.getItem('access_token');
+    if (!token) return;
+
+    // Use the dedicated check_lead endpoint which validates rater via the token
+    const res = await fetch(`${API_BASE_URL}/ops/ratings/check_lead/?lead_id=${leadId}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      // data.already_rated is an object: { partner_by_customer: bool, overall_experience: bool }
+      // If either rating type exists, we consider the lead "rated" or partially rated
+      const isRated = data.already_rated?.partner_by_customer || data.already_rated?.overall_experience;
+      setHasRated(!!isRated);
     }
-  };
+  } catch (err) {
+    console.error('Failed to check rating status:', err);
+  }
+};
+
+
 
   const handleOfferResponse = async (offerId: string, action: 'accept' | 'reject' | 'counter') => {
     try {
@@ -625,6 +652,10 @@ const safeStringify = (value: any): string => {
                     <CheckCircle size={16} />
                     Rated
                   </div>
+                )}
+                {/* Inside your JSX, typically near the status or history section */}
+                {leadDetails.status === 'completed' && (
+                  <LeadRatingsDisplay leadId={leadDetails.id} />
                 )}
 
                 {canReschedule && (
