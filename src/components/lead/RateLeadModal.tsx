@@ -151,8 +151,8 @@ const RateLeadModal: React.FC<RateLeadModalProps> = ({
               <motion.div key="1" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                 <div className="text-center mb-6">
                   <Award className="text-[#FEC925] mx-auto mb-4" size={48} />
-                  <h2 className="text-2xl font-black">How was {partnerName}?</h2>
-                </div>
+<h2 className="text-2xl font-black text-gray-900">Rate {partnerName}</h2>
+                  <p className="text-gray-500 mt-1 text-sm">How was your experience with Lead #{leadNumber}?</p>                </div>
                 {renderStarGroup('overall', 'Overall Rating', <Star className="text-yellow-500" />, '#FEC925')}
                 {error && <p className="text-red-500 text-sm mt-4 text-center font-bold">{error}</p>}
               </motion.div>
@@ -179,7 +179,7 @@ const RateLeadModal: React.FC<RateLeadModalProps> = ({
         </div>
         {step !== 'success' && (
           <div className="p-6 bg-gray-50 flex gap-3">
-            <button onClick={handleClose} className="px-6 py-3 text-gray-400 font-bold">Cancel</button>
+            <button onClick={handleClose} className="px-6 py-3 text-gray-400 font-bold">Cancel<X size={20} /></button>
             <button onClick={step === 'overall' ? () => setStep('detailed') : handleSubmit} disabled={loading || ratings.overall === 0}
               className="flex-1 bg-[#FEC925] py-4 rounded-2xl font-black flex items-center justify-center gap-2">
               {loading ? <Loader2 className="animate-spin" /> : <>{step === 'overall' ? 'Next' : 'Submit'} <ChevronRight size={20}/></>}
