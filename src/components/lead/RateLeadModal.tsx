@@ -1,7 +1,10 @@
 // src/components/rating/RateLeadModal.tsx
-import React, { useState, type ReactNode } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, X, Star, ThumbsUp, MessageSquare, Clock, Award } from 'lucide-react';
+import { 
+  Loader2, X, Star, ThumbsUp, MessageSquare, 
+  Clock, Award, CheckCircle2, ChevronRight, ChevronLeft 
+} from 'lucide-react';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
 
@@ -10,324 +13,181 @@ interface RateLeadModalProps {
   onClose: () => void;
   leadId: string;
   leadNumber: string;
-  partnerUserId: string;
+  partnerUserId: any; // Changed to any to handle both string and object
   partnerName: string;
   onSuccess: () => void;
 }
 
-interface RatingCriteria {
-  overall: number;
-  communication: number;
-  professionalism: number;
-  timeliness: number;
-}
+type Step = 'overall' | 'detailed' | 'success';
 
 const RateLeadModal: React.FC<RateLeadModalProps> = ({
-  isOpen,
-  onClose,
-  leadId,
-  leadNumber,
-  partnerUserId,
-  partnerName,
-  onSuccess
+  isOpen, onClose, leadId, leadNumber, partnerUserId, partnerName, onSuccess
 }) => {
-  const [ratings, setRatings] = useState<RatingCriteria>({
+  const [step, setStep] = useState<Step>('overall');
+  const [ratings, setRatings] = useState({
     overall: 0,
     communication: 0,
     professionalism: 0,
     timeliness: 0
   });
   const [review, setReview] = useState('');
-  const [hoveredStar, setHoveredStar] = useState<{ [key: string]: number }>({});
+  const [hoveredStar, setHoveredStar] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleStarClick = (category: keyof RatingCriteria, value: number) => {
+  const MAX_CHAR = 500;
+
+  // FIX: Extract UUID string if partnerUserId is an object
+  const getPartnerId = () => {
+    if (typeof partnerUserId === 'object' && partnerUserId !== null) {
+      return partnerUserId.id;
+    }
+    return partnerUserId;
+  };
+
+  const handleStarClick = (category: string, value: number) => {
     setRatings(prev => ({ ...prev, [category]: value }));
-  };
-
-  const handleStarHover = (category: string, value: number) => {
-    setHoveredStar(prev => ({ ...prev, [category]: value }));
-  };
-
-  const handleStarLeave = (category: string) => {
-    setHoveredStar(prev => {
-      const newState = { ...prev };
-      delete newState[category];
-      return newState;
-    });
-  };
-
-  const getStarColor = (category: keyof RatingCriteria, position: number): string => {
-    const currentRating = ratings[category];
-    const hovered = hoveredStar[category] || 0;
-    const displayValue = hovered || currentRating;
-
-    return position <= displayValue ? '#FEC925' : '#E5E7EB';
+    if (category === 'overall' && step === 'overall') {
+      setTimeout(() => setStep('detailed'), 400);
+    }
   };
 
   const handleSubmit = async () => {
-    // Validation
-    if (ratings.overall === 0) {
-      setError('Please provide an overall rating');
-      return;
-    }
-
     setLoading(true);
     setError(null);
 
     try {
       const token = localStorage.getItem('access_token');
-      if (!token) throw new Error('Authentication required');
+      const partnerId = getPartnerId(); // Use the extracted ID
 
-      // Submit two ratings: Partner rating and Overall experience
-      const requests = [];
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      };
 
-      // 1. Partner Rating
-      requests.push(
+      // Dual POST strategy required by backend unique_together constraint
+      const requests = [
         fetch(`${API_BASE_URL}/ops/ratings/`, {
           method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
+          headers,
           body: JSON.stringify({
             lead: leadId,
-            rated_user: partnerUserId,
+            rated_user: partnerId,
             rating_type: 'partner_by_customer',
             rating: ratings.overall,
             communication: ratings.communication || null,
             professionalism: ratings.professionalism || null,
-            timeliness: ratings.timeliness || null,
-            review: review.trim() || ''
+            timeliness: ratings.timeliness || null
           })
-        })
-      );
-
-      // 2. Overall Experience Rating
-      requests.push(
+        }),
         fetch(`${API_BASE_URL}/ops/ratings/`, {
           method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
+          headers,
           body: JSON.stringify({
             lead: leadId,
-            rated_user: partnerUserId, // Same user for overall experience
+            rated_user: partnerId,
             rating_type: 'overall_experience',
             rating: ratings.overall,
-            review: review.trim() || ''
+            review: review.trim()
           })
         })
-      );
+      ];
 
       const responses = await Promise.all(requests);
-
-      // Check if all requests succeeded
       for (const res of responses) {
         if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          throw new Error(err.detail || err.error || 'Failed to submit rating');
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.detail || errData.lead?.[0] || "Submission failed");
         }
       }
 
-      // Success
+      setStep('success');
       onSuccess();
-      onClose();
-      
-      // Reset form
-      setRatings({ overall: 0, communication: 0, professionalism: 0, timeliness: 0 });
-      setReview('');
-
+      setTimeout(handleClose, 2000);
     } catch (err: any) {
-      console.error('Rating submission error:', err);
-      setError(err.message || 'Failed to submit rating');
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
   const handleClose = () => {
-    if (!loading) {
-      setRatings({ overall: 0, communication: 0, professionalism: 0, timeliness: 0 });
-      setReview('');
-      setError(null);
-      onClose();
-    }
+    setStep('overall');
+    setRatings({ overall: 0, communication: 0, professionalism: 0, timeliness: 0 });
+    setReview('');
+    onClose();
   };
 
-  const renderStars = (category: keyof RatingCriteria, label: string, icon: ReactNode) => {
-    return (
-      <div className="p-4 bg-gray-50 rounded-xl border-2 border-gray-200">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            {icon}
-            <span className="font-bold text-[#1C1C1B]">{label}</span>
-          </div>
-          <span className="text-sm font-semibold text-[#FEC925]">
-            {ratings[category] > 0 ? `${ratings[category]}/5` : 'Not Rated'}
-          </span>
+  const renderStarGroup = (key: string, label: string, icon: React.ReactNode, color: string) => (
+    <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+      <div className="flex justify-between items-center mb-3">
+        <div className="flex items-center gap-2">
+          {icon} <span className="font-bold text-gray-800">{label}</span>
         </div>
-        <div className="flex gap-2 justify-center">
-          {[1, 2, 3, 4, 5].map((star) => (
-            <button
-              key={star}
-              type="button"
-              onClick={() => handleStarClick(category, star)}
-              onMouseEnter={() => handleStarHover(category, star)}
-              onMouseLeave={() => handleStarLeave(category)}
-              disabled={loading}
-              className="transition-transform hover:scale-110 disabled:opacity-50"
-            >
-              <Star
-                size={36}
-                fill={getStarColor(category, star)}
-                stroke={getStarColor(category, star)}
-                className="transition-colors"
-              />
-            </button>
-          ))}
-        </div>
+        <span className="text-xs font-bold text-gray-400">{ratings[key as keyof typeof ratings]}/5</span>
       </div>
-    );
-  };
+      <div className="flex justify-center gap-3">
+        {[1, 2, 3, 4, 5].map((star) => {
+          const isSelected = star <= (hoveredStar[key] || ratings[key as keyof typeof ratings]);
+          return (
+            <button key={star} onMouseEnter={() => setHoveredStar({ [key]: star })} onMouseLeave={() => setHoveredStar({})}
+              onClick={() => handleStarClick(key, star)} className="transition-transform active:scale-90">
+              <Star size={28} fill={isSelected ? color : 'none'} className={isSelected ? 'text-transparent' : 'text-gray-200'} />
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 
   if (!isOpen) return null;
 
   return (
-    <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-        >
-          {/* Header */}
-          <div className="sticky top-0 bg-white border-b-2 border-[#FEC925]/20 p-6 flex items-center justify-between z-10">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-[#FEC925]/20 rounded-full flex items-center justify-center">
-                <Award className="text-[#FEC925]" size={24} />
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold text-[#1C1C1B]">Rate Your Experience</h2>
-                <p className="text-gray-600">Lead #{leadNumber}</p>
-              </div>
-            </div>
-            <button
-              onClick={handleClose}
-              disabled={loading}
-              className="text-gray-400 hover:text-[#FF0000] transition disabled:opacity-50"
-            >
-              <X size={24} />
-            </button>
-          </div>
-
-          {/* Content */}
-          <div className="p-6 space-y-6">
-            
-            {error && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="p-4 bg-[#FF0000]/10 border-2 border-[#FF0000] rounded-xl flex items-center gap-3"
-              >
-                <X className="text-[#FF0000] flex-shrink-0" size={20} />
-                <p className="text-sm font-semibold text-[#1C1C1B]">{error}</p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md">
+      <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden">
+        <div className="p-8">
+          <AnimatePresence mode="wait">
+            {step === 'overall' ? (
+              <motion.div key="1" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                <div className="text-center mb-6">
+                  <Award className="text-[#FEC925] mx-auto mb-4" size={48} />
+                  <h2 className="text-2xl font-black">How was {partnerName}?</h2>
+                </div>
+                {renderStarGroup('overall', 'Overall Rating', <Star className="text-yellow-500" />, '#FEC925')}
+                {error && <p className="text-red-500 text-sm mt-4 text-center font-bold">{error}</p>}
               </motion.div>
-            )}
-
-            {/* Partner Info */}
-            <div className="bg-gradient-to-r from-[#FEC925]/10 to-[#1B8A05]/10 p-4 rounded-xl border-2 border-[#FEC925]/20">
-              <p className="text-sm text-gray-600 mb-1">Service Partner</p>
-              <p className="font-bold text-xl text-[#1C1C1B]">{partnerName}</p>
-            </div>
-
-            {/* Overall Rating - Required */}
-            <div>
-              <label className="block font-bold text-lg text-[#1C1C1B] mb-4">
-                Overall Experience * <span className="text-sm text-gray-500">(Required)</span>
-              </label>
-              {renderStars('overall', 'Overall Rating', <Star className="text-[#FEC925]" size={20} />)}
-            </div>
-
-            {/* Rating Categories - Optional */}
-            <div>
-              <label className="block font-bold text-lg text-[#1C1C1B] mb-4">
-                Detailed Ratings <span className="text-sm text-gray-500">(Optional)</span>
-              </label>
-              <div className="space-y-3">
-                {renderStars('communication', 'Communication', <MessageSquare className="text-blue-600" size={20} />)}
-                {renderStars('professionalism', 'Professionalism', <ThumbsUp className="text-[#1B8A05]" size={20} />)}
-                {renderStars('timeliness', 'Timeliness', <Clock className="text-purple-600" size={20} />)}
+            ) : step === 'detailed' ? (
+              <motion.div key="2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="font-bold">Detailed Feedback</h3>
+                  <button onClick={() => setStep('overall')} className="text-xs text-gray-400 flex items-center gap-1"><ChevronLeft size={14}/> Back</button>
+                </div>
+                {renderStarGroup('communication', 'Communication', <MessageSquare className="text-blue-500" />, '#3B82F6')}
+                {renderStarGroup('professionalism', 'Professionalism', <ThumbsUp className="text-green-500" />, '#22C55E')}
+                {renderStarGroup('timeliness', 'Timeliness', <Clock className="text-purple-500" />, '#A855F7')}
+                <textarea className="w-full p-4 border-2 border-gray-100 rounded-xl focus:border-[#FEC925] outline-none h-24 resize-none"
+                  placeholder="Review comments..." value={review} maxLength={MAX_CHAR} onChange={(e) => setReview(e.target.value)} />
+                <p className="text-right text-[10px] text-gray-400">{review.length}/{MAX_CHAR}</p>
+              </motion.div>
+            ) : (
+              <div className="py-10 text-center">
+                <CheckCircle2 className="text-green-500 mx-auto mb-4" size={64} />
+                <h2 className="text-2xl font-bold">Feedback Received!</h2>
               </div>
-            </div>
-
-            {/* Written Review */}
-            <div>
-              <label className="block font-bold text-lg text-[#1C1C1B] mb-2">
-                Share Your Experience <span className="text-sm text-gray-500">(Optional)</span>
-              </label>
-              <textarea
-                value={review}
-                onChange={(e) => setReview(e.target.value)}
-                disabled={loading}
-                placeholder="Tell us about your experience with the partner and the overall service..."
-                rows={5}
-                maxLength={500}
-                className="w-full p-4 border-2 border-gray-200 rounded-xl focus:border-[#FEC925] focus:outline-none transition resize-none disabled:opacity-50"
-              />
-              <p className="text-xs text-gray-500 mt-2 text-right">
-                {review.length} / 500 characters
-              </p>
-            </div>
-
-            {/* Info Box */}
-            <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
-              <h4 className="font-bold text-[#1C1C1B] mb-2 flex items-center gap-2">
-                <Award size={16} className="text-blue-600" />
-                Why Your Rating Matters
-              </h4>
-              <ul className="text-sm text-gray-700 space-y-1">
-                <li>• Helps us improve our service quality</li>
-                <li>• Assists other customers in choosing partners</li>
-                <li>• Rewards excellent service providers</li>
-                <li>• Your feedback is verified and trusted</li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div className="sticky bottom-0 bg-white border-t-2 border-[#FEC925]/20 p-6 flex gap-4">
-            <button
-              onClick={handleClose}
-              disabled={loading}
-              className="flex-1 px-6 py-3 bg-gray-100 text-[#1C1C1B] rounded-xl font-bold hover:bg-gray-200 transition disabled:opacity-50"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSubmit}
-              disabled={loading || ratings.overall === 0}
-              className="flex-1 px-6 py-3 bg-[#FEC925] text-[#1C1C1B] rounded-xl font-bold hover:bg-[#e5b520] transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="animate-spin" size={20} />
-                  Submitting...
-                </>
-              ) : (
-                <>
-                  <Award size={20} />
-                  Submit Rating
-                </>
-              )}
+            )}
+          </AnimatePresence>
+        </div>
+        {step !== 'success' && (
+          <div className="p-6 bg-gray-50 flex gap-3">
+            <button onClick={handleClose} className="px-6 py-3 text-gray-400 font-bold">Cancel</button>
+            <button onClick={step === 'overall' ? () => setStep('detailed') : handleSubmit} disabled={loading || ratings.overall === 0}
+              className="flex-1 bg-[#FEC925] py-4 rounded-2xl font-black flex items-center justify-center gap-2">
+              {loading ? <Loader2 className="animate-spin" /> : <>{step === 'overall' ? 'Next' : 'Submit'} <ChevronRight size={20}/></>}
             </button>
           </div>
-        </motion.div>
-      </div>
-    </AnimatePresence>
+        )}
+      </motion.div>
+    </div>
   );
 };
 
