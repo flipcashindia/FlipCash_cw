@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   X, Search, Navigation, 
-  Loader2, Globe, Star, ChevronRight 
+  Loader2, Globe
 } from 'lucide-react';
 import { useCityContext } from '../../context/CityContext';
 import apiClient from '../../api/client/apiClient';
