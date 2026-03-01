@@ -126,7 +126,16 @@ const EMPTY: FormState = {
   postal_code: '', city: '', state: '', is_default: false,
 };
 
-const MyAddressesPage: React.FC = () => {
+
+interface MyAddressesPageProps {
+  username?: string;
+  onLogout?: () => void;
+  onNavClick?: (tab: any) => void;
+  onBreadcrumbClick?: (path: string) => void;
+}
+
+
+const MyAddressesPage: React.FC<MyAddressesPageProps> = () => {
   const [addresses, setAddresses] = useState<UserAddress[]>([]);
   const [loading,   setLoading]   = useState(true);
   const [saving,    setSaving]    = useState(false);
@@ -210,7 +219,7 @@ const MyAddressesPage: React.FC = () => {
           setLocating(false);
         }
       },
-      (error) => {
+      (_error) => {
         setLocating(false);
         alert('Permission denied or location unavailable.');
       },

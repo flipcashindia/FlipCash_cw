@@ -1,7 +1,7 @@
-// CityContext.tsx
+// src/context/CityContext.tsx
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 
-interface CityContextType {
+export interface CityContextType {
   selectedCity: string | null;
   selectedState: string | null;
   selectedPincode: string | null;
@@ -14,6 +14,9 @@ interface CityContextType {
   openCityModal: () => void;
   closeCityModal: () => void;
   clearCitySelection: () => void;
+  // --- Added to fix TS2339 build error ---
+  saveToLocalStorage: () => void;
+  loadFromLocalStorage: () => void;
 }
 
 const CityContext = createContext<CityContextType | undefined>(undefined);
@@ -36,6 +39,13 @@ export const CityProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     loadFromLocalStorage();
   }, []);
+
+  const saveToLocalStorage = () => {
+    if (selectedCity) localStorage.setItem(STORAGE_KEYS.CITY, selectedCity);
+    if (selectedState) localStorage.setItem(STORAGE_KEYS.STATE, selectedState);
+    if (selectedPincode) localStorage.setItem(STORAGE_KEYS.PINCODE, selectedPincode);
+    localStorage.setItem(STORAGE_KEYS.SERVICE_AVAILABLE, isServiceAvailable.toString());
+  };
 
   const loadFromLocalStorage = () => {
     const city = localStorage.getItem(STORAGE_KEYS.CITY);
@@ -99,6 +109,8 @@ export const CityProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     openCityModal,
     closeCityModal,
     clearCitySelection,
+    saveToLocalStorage,
+    loadFromLocalStorage,
   };
 
   return <CityContext.Provider value={value}>{children}</CityContext.Provider>;
