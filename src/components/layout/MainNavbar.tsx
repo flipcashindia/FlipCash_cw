@@ -126,7 +126,7 @@ const MainNavbar: React.FC<MainNavbarProps> = () => {
         <div className="p-1.5 bg-white/40 rounded-lg group-hover:bg-white/60 transition-colors">
           <MapPin size={18} className="text-[#1C1C1B]" />
         </div>
-        <div className="text-left hidden sm:block">
+        <div className="text-left">
           <div className="flex items-center gap-1">
             <span className="text-sm font-extrabold text-[#1C1C1B]">
               {selectedCity || 'Delhi'}
@@ -274,7 +274,7 @@ const MainNavbar: React.FC<MainNavbarProps> = () => {
                 /* Login Button */
                 <button 
                   onClick={() => setShowAuthModal(true)} 
-                  className="px-6 py-2.5 bg-gradient-to-r from-[#FEC925] to-[#1B8A05] text-[#1C1C1B] font-bold rounded-xl hover:shadow-lg transition-all transform hover:scale-105"
+                  className="px-3 md:px-6 py-1 md:py-2.5 bg-gradient-to-r from-[#FEC925] to-[#1B8A05] text-[#1C1C1B] text-sm md:text-base font-bold rounded-xl hover:shadow-lg transition-all transform hover:scale-105"
                 >
                   Login
                 </button>
