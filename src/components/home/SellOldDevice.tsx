@@ -50,7 +50,7 @@ const CachedImage: React.FC<{
 
 const SellOldDevice: React.FC = () => {
   const navigate = useNavigate();
-  const { selectedCity, selectedState, openCityModal } = useCityContext();
+  const { isServiceAvailable, selectedCity, selectedState, openCityModal } = useCityContext();
   const { serviceAvailability, hasCategoriesInCity } = useCityService();
   
   const [categories, setCategories] = useState<CategoryWithCount[]>([]);
@@ -137,7 +137,7 @@ const SellOldDevice: React.FC = () => {
     }
 
     // Check if service is available in selected city
-    if (!serviceAvailability.isAvailable) {
+    if (isServiceAvailable) {
       setShowNoService(true);
       return;
     }
@@ -228,12 +228,6 @@ const SellOldDevice: React.FC = () => {
   if (showNoService) {
     return (
       <NoServicePage
-        cityName={selectedCity || undefined}
-        stateName={selectedState || undefined}
-        onChangeCity={() => {
-          setShowNoService(false);
-          openCityModal();
-        }}
       />
     );
   }

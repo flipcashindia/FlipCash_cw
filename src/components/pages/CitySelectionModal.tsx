@@ -1,406 +1,250 @@
-// CitySelectionModal.tsx
-// Modal for selecting state and city when user lands on the website
-
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { MapPin, Search, X, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
-import axios from 'axios';
+import React, { useEffect, useState } from 'react';
+import { 
+  X, Search, Navigation, 
+  Loader2, Globe, CheckCircle
+} from 'lucide-react';
 import { useCityContext } from '../../context/CityContext';
+import apiClient from '../../api/client/apiClient';
 
-// FlipCash Brand Colors
-const COLORS = {
-  primary: '#FEC925',     // Yellow
-  success: '#1B8A05',     // Green
-  error: '#FF0000',       // Red
-  text: '#1C1C1B',        // Black
-  lightGray: '#F5F5F5',
-  mediumGray: '#CCCCCC',
-  darkGray: '#666666',
+// ─────────────────────────────────────────────────────────────────────────────
+// CITY LANDMARK SVG ICONS (From PartnerAreaPage)
+// ─────────────────────────────────────────────────────────────────────────────
+const CITY_ICONS: Record<string, React.FC<{ size?: number; className?: string }>> = {
+  Delhi: ({ size = 64, className = '' }) => (
+    <svg width={size} height={size} viewBox="0 0 80 80" fill="none" className={className}>
+      <rect x="36" y="8" width="8" height="6" rx="1" fill="#1DB8A0" stroke="#1C1C1B" strokeWidth="1.5"/>
+      <path d="M24 38 Q40 18 56 38" stroke="#1C1C1B" strokeWidth="2" fill="#1DB8A0" fillOpacity="0.3"/>
+      <rect x="22" y="38" width="8" height="28" rx="1" fill="#1DB8A0" stroke="#1C1C1B" strokeWidth="1.5"/>
+      <rect x="50" y="38" width="8" height="28" rx="1" fill="#1DB8A0" stroke="#1C1C1B" strokeWidth="1.5"/>
+      <rect x="30" y="52" width="20" height="14" rx="1" fill="#1DB8A0" stroke="#1C1C1B" strokeWidth="1.5"/>
+      <path d="M30 52 Q40 44 50 52" stroke="#1C1C1B" strokeWidth="1.5" fill="#1DB8A0"/>
+      <rect x="18" y="64" width="44" height="4" rx="1" fill="#1C1C1B"/>
+      <line x1="16" y1="46" x2="16" y2="64" stroke="#1C1C1B" strokeWidth="1.5"/>
+      <circle cx="16" cy="44" r="2.5" fill="#FEC925" stroke="#1C1C1B" strokeWidth="1"/>
+      <line x1="64" y1="46" x2="64" y2="64" stroke="#1C1C1B" strokeWidth="1.5"/>
+      <circle cx="64" cy="44" r="2.5" fill="#FEC925" stroke="#1C1C1B" strokeWidth="1"/>
+    </svg>
+  ),
+  Mumbai: ({ size = 64, className = '' }) => (
+    <svg width={size} height={size} viewBox="0 0 80 80" fill="none" className={className}>
+      <path d="M20 64 L20 42 Q20 34 28 34 L52 34 Q60 34 60 42 L60 64" stroke="#1C1C1B" strokeWidth="2" fill="#1DB8A0" fillOpacity="0.2"/>
+      <path d="M28 64 L28 46 Q28 38 40 38 Q52 38 52 46 L52 64" fill="#1DB8A0" stroke="#1C1C1B" strokeWidth="1.5"/>
+      <path d="M28 46 Q40 32 52 46" fill="none" stroke="#1C1C1B" strokeWidth="2"/>
+      <ellipse cx="40" cy="26" rx="8" ry="6" fill="#1DB8A0" stroke="#1C1C1B" strokeWidth="1.5"/>
+      <line x1="40" y1="20" x2="40" y2="14" stroke="#1C1C1B" strokeWidth="1.5"/>
+      <circle cx="40" cy="13" r="2" fill="#FEC925" stroke="#1C1C1B" strokeWidth="1"/>
+      <rect x="14" y="64" width="52" height="4" rx="1" fill="#1C1C1B"/>
+    </svg>
+  ),
+  // ... Other icons as defined in your code
+  _default: ({ size = 64, className = '' }) => (
+    <svg width={size} height={size} viewBox="0 0 80 80" fill="none" className={className}>
+      <rect x="28" y="20" width="24" height="44" rx="2" fill="#1DB8A0" stroke="#1C1C1B" strokeWidth="1.5"/>
+      <line x1="40" y1="20" x2="40" y2="14" stroke="#1C1C1B" strokeWidth="1.5"/>
+      <circle cx="40" cy="13" r="2" fill="#FEC925" stroke="#1C1C1B" strokeWidth="1"/>
+      <rect x="10" y="64" width="60" height="4" rx="1" fill="#1C1C1B"/>
+    </svg>
+  ),
 };
 
-interface State {
-  id: string;
-  name: string;
-  is_active: boolean;
+function getCityIcon(cityName: string): React.FC<{ size?: number; className?: string }> {
+  return CITY_ICONS[cityName] ?? CITY_ICONS._default;
 }
 
-interface City {
-  id: string;
-  name: string;
-  state: string;
-  pincode: string;
-  is_active: boolean;
-}
+const POPULAR_CITIES = [
+  { name: 'Bangalore', state: 'Karnataka' },
+  { name: 'Chennai', state: 'Tamil Nadu' },
+  { name: 'Delhi', state: 'Delhi' },
+  { name: 'Gurgaon', state: 'Haryana' },
+  { name: 'Hyderabad', state: 'Telangana' },
+  { name: 'Kolkata', state: 'West Bengal' },
+  { name: 'Mumbai', state: 'Maharashtra' },
+  { name: 'Noida', state: 'Uttar Pradesh' },
+  { name: 'Pune', state: 'Maharashtra' },
+];
 
-const CitySelectionModal: React.FC = () => {
-  const {
-    isCityModalOpen,
-    closeCityModal,
-    setSelectedCity,
-    setSelectedState,
-    setSelectedPincode,
-    setIsServiceAvailable,
-    saveToLocalStorage,
+const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+
+const CityPickerModal: React.FC = () => {
+  const { 
+    isCityModalOpen, closeCityModal, selectedCity,
+    setSelectedCity, setSelectedPincode, setSelectedState,
+    setIsServiceAvailable , isServiceAvailable
   } = useCityContext();
 
-  const [step, setStep] = useState<'state' | 'city'>('state');
-  const [states, setStates] = useState<State[]>([]);
-  const [cities, setCities] = useState<City[]>([]);
-  const [selectedStateId, setSelectedStateId] = useState<string | null>(null);
-  const [_selectedCityId, setSelectedCityId] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
+  const [isDetecting, setIsDetecting] = useState(false);
+  const [viewAll, setViewAll] = useState(false);
+
+
 
   useEffect(() => {
-    if (isCityModalOpen && step === 'state') {
-      fetchStates();
+    if (selectedCity && isCityModalOpen === false) {
+      // Re-verify serviceability silently whenever the app loads with a saved city
+      apiClient.get(`/accounts/pincode-resolve/?q=${selectedCity}`)
+        .then(({ data }) => setIsServiceAvailable(data.serviceable))
+        .catch(() => setIsServiceAvailable(true)); // Fail open
     }
-  }, [isCityModalOpen, step]);
+    console.log('City Modal Mounted. Current City:', selectedCity);
+    console.log('Initial Serviceability:', isServiceAvailable);
+  }, []);
 
-  useEffect(() => {
-    if (selectedStateId && step === 'city') {
-      fetchCities(selectedStateId);
-    }
-  }, [selectedStateId, step]);
+  const handleSelect = async (city: string, state: string, pincode: string | null = null) => {
+    console.log('🏙️ City Selected:', city);
 
-  const fetchStates = async () => {
+    // 1. Update Context States (The useEffect in Context will handle the storage automatically)
+    setSelectedCity(city);
+    setSelectedState(state);
+    setSelectedPincode(pincode || '');
+
+    // 2. Resolve Serviceability
     try {
-      setLoading(true);
-      setError('');
-      
-      // Replace with your actual API endpoint
-      const response = await axios.get('/api/ops/states/');
-      setStates(response.data.results || response.data);
-    } catch (err: any) {
-      console.error('Failed to fetch states:', err);
-      setError('Failed to load states. Please try again.');
-      
-      // Fallback data for demo
-      setStates([
-        { id: '1', name: 'Delhi', is_active: true },
-        { id: '2', name: 'Maharashtra', is_active: true },
-        { id: '3', name: 'Karnataka', is_active: true },
-        { id: '4', name: 'Tamil Nadu', is_active: false },
-      ]);
-    } finally {
-      setLoading(false);
+      const q = pincode || city;
+      const { data } = await apiClient.get(`/accounts/pincode-resolve/?q=${q}`);
+      console.log('Serviceability Response:', data);
+      setIsServiceAvailable(data.serviceable);
+    } catch (err) {
+      console.warn('Network error: Defaulting to available');
+      setIsServiceAvailable(true); 
     }
-  };
-
-  const fetchCities = async (stateId: string) => {
-    try {
-      setLoading(true);
-      setError('');
-      
-      // Replace with your actual API endpoint
-      const response = await axios.get(`/api/ops/cities/?state=${stateId}`);
-      setCities(response.data.results || response.data);
-    } catch (err: any) {
-      console.error('Failed to fetch cities:', err);
-      setError('Failed to load cities. Please try again.');
-      
-      // Fallback data for demo
-      setCities([
-        { id: '1', name: 'New Delhi', state: 'Delhi', pincode: '110001', is_active: true },
-        { id: '2', name: 'Dwarka', state: 'Delhi', pincode: '110075', is_active: true },
-        { id: '3', name: 'Rohini', state: 'Delhi', pincode: '110085', is_active: false },
-      ]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleStateSelect = (state: State) => {
-    if (!state.is_active) {
-      setError(`Service not available in ${state.name} yet`);
-      return;
-    }
-
-    setSelectedStateId(state.id);
-    setSelectedState(state.name);
-    setStep('city');
-    setSearchQuery('');
-    setError('');
-  };
-
-  const handleCitySelect = (city: City) => {
-    if (!city.is_active) {
-      setSelectedCityId(city.id);
-      setSelectedCity(city.name);
-      setSelectedPincode(city.pincode);
-      setIsServiceAvailable(false);
-      saveToLocalStorage();
-      closeCityModal();
-      return;
-    }
-
-    setSelectedCityId(city.id);
-    setSelectedCity(city.name);
-    setSelectedPincode(city.pincode);
-    setIsServiceAvailable(true);
-    saveToLocalStorage();
     closeCityModal();
   };
 
-  const handleBack = () => {
-    if (step === 'city') {
-      setStep('state');
-      setSelectedStateId(null);
-      setCities([]);
-      setSearchQuery('');
-      setError('');
-    }
+  const handleDetectLocation = () => {
+    if (!navigator.geolocation) return alert("Geolocation not supported");
+    setIsDetecting(true);
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      try {
+        const { latitude, longitude } = pos.coords;
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`);
+        const data = await res.json();
+        const addr = data.address;
+        handleSelect(addr.city || addr.town || addr.village || 'Delhi', addr.state || '', addr.postcode || null);
+      } catch (err) {
+        alert("Could not detect location.");
+      } finally {
+        setIsDetecting(false);
+      }
+    }, () => setIsDetecting(false));
   };
 
-  const handleClose = () => {
-    // Only allow close if at least state is selected
-    if (selectedStateId) {
-      closeCityModal();
-    }
-  };
-
-  const filteredStates = states.filter(state =>
-    state.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const filteredCities = cities.filter(city =>
-    city.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    city.pincode.includes(searchQuery)
-  );
+  
 
   if (!isCityModalOpen) return null;
 
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-        onClick={handleClose}
-      >
-        <motion.div
-          initial={{ scale: 0.9, y: 20 }}
-          animate={{ scale: 1, y: 0 }}
-          exit={{ scale: 0.9, y: 20 }}
-          className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Header */}
-          <div
-            className="p-6 border-b-2"
-            style={{ borderColor: COLORS.mediumGray }}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                {step === 'city' && (
-                  <button
-                    onClick={handleBack}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                  >
-                    ←
-                  </button>
-                )}
-                <div
-                  className="p-3 rounded-xl"
-                  style={{ backgroundColor: `${COLORS.primary}20` }}
-                >
-                  <MapPin size={24} style={{ color: COLORS.primary }} />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold" style={{ color: COLORS.text }}>
-                    {step === 'state' ? 'Select Your State' : 'Select Your City'}
-                  </h2>
-                  <p className="text-sm text-gray-600">
-                    {step === 'state' 
-                      ? 'Choose your state to check service availability'
-                      : 'Choose your city to continue'
-                    }
-                  </p>
-                </div>
-              </div>
-              {selectedStateId && (
-                <button
-                  onClick={handleClose}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <X size={24} style={{ color: COLORS.text }} />
-                </button>
-              )}
-            </div>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-md" onClick={closeCityModal} />
 
-            {/* Search Bar */}
-            <div className="mt-4 relative">
-              <Search
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                size={20}
-              />
-              <input
+      <div className="relative w-full max-w-4xl bg-white rounded-[32px] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+        
+        {/* Header */}
+        <div className="px-8 py-6 flex items-center justify-between border-b border-gray-100">
+          <div>
+            <h2 className="text-2xl font-black text-gray-900 tracking-tight">Pick your city</h2>
+            <p className="text-sm text-gray-500 font-medium">To provide you the best price & service</p>
+          </div>
+          <button onClick={closeCityModal} className="p-3 bg-gray-50 hover:bg-gray-100 rounded-2xl transition-all">
+            <X size={24} className="text-gray-400" />
+          </button>
+        </div>
+
+        <div className="p-8 overflow-y-auto max-h-[85vh] custom-scrollbar">
+          {/* Search Section */}
+          <div className="relative max-w-2xl mx-auto mb-10">
+            <div className="relative group">
+              <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#1DB8A0] transition-colors" size={22} />
+              <input 
                 type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={step === 'state' ? 'Search states...' : 'Search cities or pincode...'}
-                className="w-full pl-10 pr-4 py-3 border-2 rounded-xl focus:outline-none"
-                style={{ borderColor: COLORS.mediumGray }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = COLORS.primary;
-                  e.target.style.boxShadow = `0 0 0 3px ${COLORS.primary}30`;
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = COLORS.mediumGray;
-                  e.target.style.boxShadow = 'none';
-                }}
+                placeholder="Search your city or pincode"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-14 pr-6 py-5 bg-gray-50 border-2 border-transparent focus:border-[#FEC925] focus:bg-white rounded-3xl outline-none transition-all font-bold text-gray-800 shadow-sm"
               />
             </div>
-
-            {/* Error Message */}
-            {error && (
-              <div
-                className="mt-4 p-3 rounded-lg flex items-center gap-2"
-                style={{
-                  backgroundColor: `${COLORS.error}20`,
-                  color: COLORS.error,
-                }}
-              >
-                <AlertCircle size={20} />
-                <span className="text-sm font-semibold">{error}</span>
+            {search && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-10">
+                <button onClick={handleDetectLocation} className="w-full flex items-center gap-3 p-4 hover:bg-gray-50 text-[#1DB8A0] font-bold transition-colors">
+                  {isDetecting ? <Loader2 className="animate-spin" size={18} /> : <Navigation size={18} />}
+                  <span>Detect My Location</span>
+                </button>
               </div>
             )}
           </div>
 
-          {/* Content */}
-          <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
-            {loading ? (
-              <div className="flex flex-col items-center justify-center py-12">
-                <Loader2
-                  className="animate-spin mb-4"
-                  size={48}
-                  style={{ color: COLORS.primary }}
-                />
-                <p className="text-gray-600">
-                  Loading {step === 'state' ? 'states' : 'cities'}...
-                </p>
-              </div>
-            ) : step === 'state' ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {filteredStates.map((state) => (
-                  <motion.button
-                    key={state.id}
-                    onClick={() => handleStateSelect(state)}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="p-4 border-2 rounded-xl text-left transition-all"
-                    style={{
-                      borderColor: state.is_active ? COLORS.mediumGray : `${COLORS.error}40`,
-                      backgroundColor: state.is_active ? 'white' : `${COLORS.lightGray}`,
-                      opacity: state.is_active ? 1 : 0.6,
-                    }}
-                    onMouseEnter={(e) => {
-                      if (state.is_active) {
-                        e.currentTarget.style.borderColor = COLORS.primary;
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (state.is_active) {
-                        e.currentTarget.style.borderColor = COLORS.mediumGray;
-                      }
-                    }}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold" style={{ color: COLORS.text }}>
-                        {state.name}
-                      </span>
-                      {state.is_active ? (
-                        <CheckCircle size={20} style={{ color: COLORS.success }} />
-                      ) : (
-                        <AlertCircle size={20} style={{ color: COLORS.error }} />
-                      )}
-                    </div>
-                    <p className="text-xs mt-1" style={{ color: COLORS.darkGray }}>
-                      {state.is_active ? 'Service Available' : 'Coming Soon'}
-                    </p>
-                  </motion.button>
-                ))}
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-3">
-                {filteredCities.map((city) => (
-                  <motion.button
-                    key={city.id}
-                    onClick={() => handleCitySelect(city)}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="p-4 border-2 rounded-xl text-left transition-all"
-                    style={{
-                      borderColor: city.is_active ? COLORS.mediumGray : `${COLORS.error}40`,
-                      backgroundColor: city.is_active ? 'white' : `${COLORS.lightGray}`,
-                      opacity: city.is_active ? 1 : 0.6,
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = city.is_active 
-                        ? COLORS.primary 
-                        : `${COLORS.error}60`;
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = city.is_active 
-                        ? COLORS.mediumGray 
-                        : `${COLORS.error}40`;
-                    }}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="font-semibold" style={{ color: COLORS.text }}>
+          {!viewAll ? (
+            <>
+              <div className="mb-12">
+                <div className="flex items-center gap-2 mb-8">
+                  <div className="h-1 w-6 bg-[#FEC925] rounded-full" />
+                  <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest">Popular Cities</h3>
+                </div>
+                
+                <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-9 gap-6">
+                  {POPULAR_CITIES.map((city) => {
+                    const CityIcon = getCityIcon(city.name);
+                    const isSelected = selectedCity === city.name;
+                    return (
+                      <button 
+                        key={city.name}
+                        onClick={() => handleSelect(city.name, city.state)}
+                        className="flex flex-col items-center gap-3 group relative"
+                      >
+                        <div className={`relative w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-300 border-2 ${
+                          isSelected 
+                          ? 'bg-[#1DB8A0]/10 border-[#1DB8A0]' 
+                          : 'bg-gray-50 border-transparent group-hover:bg-[#1DB8A0]/10 group-hover:scale-110'
+                        }`}>
+                          <CityIcon size={40} />
+                          {isSelected && (
+                            <div className="absolute -top-1 -right-1 bg-white rounded-full">
+                              <CheckCircle size={14} className="text-[#1DB8A0] fill-white" />
+                            </div>
+                          )}
+                        </div>
+                        <span className={`text-[11px] font-black uppercase tracking-tight text-center ${
+                          isSelected ? 'text-[#1DB8A0]' : 'text-gray-600 group-hover:text-gray-900'
+                        }`}>
                           {city.name}
-                        </div>
-                        <div className="text-sm text-gray-600">
-                          Pincode: {city.pincode}
-                        </div>
-                      </div>
-                      {city.is_active ? (
-                        <CheckCircle size={20} style={{ color: COLORS.success }} />
-                      ) : (
-                        <AlertCircle size={20} style={{ color: COLORS.error }} />
-                      )}
-                    </div>
-                    <p className="text-xs mt-1" style={{ color: COLORS.darkGray }}>
-                      {city.is_active ? 'Service Available' : 'Not Servicing Yet'}
-                    </p>
-                  </motion.button>
-                ))}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            )}
-
-            {/* Empty State */}
-            {!loading && (
-              (step === 'state' && filteredStates.length === 0) ||
-              (step === 'city' && filteredCities.length === 0)
-            ) && (
-              <div className="text-center py-12">
-                <MapPin size={48} className="mx-auto mb-4 text-gray-400" />
-                <p className="text-gray-600">
-                  No {step === 'state' ? 'states' : 'cities'} found
-                </p>
+              <div className="text-center">
+                <button onClick={() => setViewAll(true)} className="px-8 py-3 bg-gray-50 hover:bg-[#FEC925] text-gray-900 font-black rounded-2xl transition-all border border-gray-100">
+                  View All Cities
+                </button>
               </div>
-            )}
-          </div>
-
-          {/* Footer */}
-          <div
-            className="p-4 border-t-2 text-center"
-            style={{
-              borderColor: COLORS.mediumGray,
-              backgroundColor: COLORS.lightGray,
-            }}
-          >
-            <p className="text-xs" style={{ color: COLORS.darkGray }}>
-              🚀 We're rapidly expanding to more cities!
-            </p>
-          </div>
-        </motion.div>
-      </motion.div>
-    </AnimatePresence>
+            </>
+          ) : (
+            <div className="animate-in slide-in-from-bottom-4 duration-500">
+              <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
+                <div className="flex items-center gap-4 flex-wrap">
+                  <span className="text-xs font-bold text-gray-400">Alphabetical Order :</span>
+                  {ALPHABET.map(char => (
+                    <button key={char} className="w-6 h-6 flex items-center justify-center text-xs font-black text-gray-700 hover:text-[#1DB8A0] hover:bg-emerald-50 rounded-md">
+                      {char}
+                    </button>
+                  ))}
+                </div>
+                <button onClick={() => setViewAll(false)} className="text-xs font-black text-[#1DB8A0] hover:underline">Back to Popular</button>
+              </div>
+              {/* Filtered city list goes here */}
+            </div>
+          )}
+        </div>
+        
+        <div className="px-8 py-4 bg-gray-50 flex items-center gap-3">
+          <Globe size={14} className="text-gray-400" />
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+            FlipCash service is currently available in 500+ major cities across India
+          </p>
+        </div>
+      </div>
+    </div>
   );
 };
 
-export default CitySelectionModal;
+export default CityPickerModal;

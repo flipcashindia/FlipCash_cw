@@ -123,13 +123,13 @@ const MainNavbar: React.FC<MainNavbarProps> = () => {
         onClick={openCityModal}
         className="flex items-center gap-1.5 px-3 py-2 hover:bg-white/20 rounded-xl transition-all group"
       >
-        <div className="p-1.5 bg-white/40 rounded-lg group-hover:bg-white/60 transition-colors">
+        <div className="hidden md:flex p-1.5 bg-white/40 rounded-lg group-hover:bg-white/60 transition-colors">
           <MapPin size={18} className="text-[#1C1C1B]" />
         </div>
         <div className="text-left">
           <div className="flex items-center gap-1">
             <span className="text-sm font-extrabold text-[#1C1C1B]">
-              {selectedCity || 'Delhi'}
+              {selectedCity} {/* Use selectedCity directly from context */}
             </span>
             <ChevronDown size={14} className="text-[#1C1C1B]" />
           </div>

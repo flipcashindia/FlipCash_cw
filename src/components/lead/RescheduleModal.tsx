@@ -170,7 +170,7 @@ const RescheduleModal: React.FC<RescheduleModalProps> = ({
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`  // ✅ Already correct
+            'Authorization': `Bearer ${token}`  //  ✅ Already correct
           },
           body: JSON.stringify({
             preferred_date: formatDateForAPI(selectedDate),
