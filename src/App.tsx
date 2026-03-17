@@ -17,7 +17,7 @@ import HeroBanner from './components/home/HeroBanner2';
 import CustomerReviews from './components/home/CustomerReviews';
 // import TopBrands from './components/home/TopBrands';
 import BlogSlider from './components/home/BlogSlider';
-import BlogSection from './components/home/BlogSection';
+// import BlogSection from './components/home/BlogSection';
 // import FAQSection from './components/home/FAQSection';
 import DownloadAppBanner from './components/home/DownloadAppBanner';
 import AboutSection from './components/home/AboutSection';
