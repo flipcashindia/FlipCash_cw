@@ -59,6 +59,8 @@ import ConsumerWithdrawalHistoryPage from './components/wallet/ConsumerWithdrawa
 import ConsumerWithdrawPage from './components/wallet/ConsumerWithdrawPage';
 import ConsumerPaymentCallbackPage from './components/wallet/ConsumerPaymentCallbackPage';
 import ConsumerBankAccountsPage from './components/wallet/ConsumerBankAccountsPage';
+import BlogDetailPage from './components/pages/BlogPage';
+import BlogListPage from './components/pages/BlogListing';
 
 function Home() {
   return (
@@ -147,7 +149,7 @@ function AppRoutes() {
       <div className="pt-[0px]">
           <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/blog" element={<BlogSection />} />
+          {/* <Route path="/blog" element={<BlogSection />} /> */}
           {/* <Route path="/blog/:id" element={<BlogDetailPage />} /> */}
           <Route path="/faq" element={<FAQ />} />
           <Route path="/about" element={<AboutSection />} />
@@ -197,6 +199,8 @@ function AppRoutes() {
           <Route path="/disputes" element={<DisputesList />} />
           <Route path="/disputes/:disputeId" element={<DisputeDetail />} />
           <Route path="/contact" element={<ContactUsPage />} />
+          <Route path="/blog" element={<BlogListPage />} />
+          <Route path="/blog/:slug" element={<BlogDetailPage />} />
           {/* This must be the LAST route in the list */}
           <Route path="*" element={<NotFoundPage />} />
         </Routes>

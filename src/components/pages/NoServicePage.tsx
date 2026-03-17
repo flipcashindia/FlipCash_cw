@@ -1,163 +1,59 @@
-// NoServicePage.tsx
-// Shows when service is not available in selected city or category has zero items
-
+// src/components/pages/NoServicePage.tsx
 import React from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, Home, RefreshCw } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { MapPin, RefreshCw, Globe } from 'lucide-react';
 import { useCityContext } from '../../context/CityContext';
 
-// FlipCash Brand Colors
-const COLORS = {
-  primary: '#FEC925',     // Yellow
-  success: '#1B8A05',     // Green
-  error: '#FF0000',       // Red
-  text: '#1C1C1B',        // Black
-  lightGray: '#F5F5F5',
-  mediumGray: '#CCCCCC',
-  darkGray: '#666666',
-};
-
-interface NoServicePageProps {
-  cityName?: string;
-  stateName?: string;
-  message?: string;
-  onChangeCity?: () => void;
-}
-
-const NoServicePage: React.FC<NoServicePageProps> = ({
-  cityName,
-  stateName,
-  message,
-  onChangeCity,
-}) => {
-  const navigate = useNavigate();
+const NoServicePage: React.FC = () => {
   const { selectedCity, selectedState, openCityModal } = useCityContext();
 
-  const displayCity = cityName || selectedCity || 'your area';
-  const displayState = stateName || selectedState || '';
-  const displayMessage = message || `Currently we are not servicing in ${displayCity}`;
-
-  const handleGoHome = () => {
-    navigate('/');
-  };
-
-  const handleChangeCity = () => {
-    if (onChangeCity) {
-      onChangeCity();
-    } else {
-      openCityModal();
-    }
-  };
+  // Use Delhi as fallback to match Navbar default behavior
+  const displayCity = selectedCity || 'Delhi';
+  const displayState = selectedState || 'Delhi';
 
   return (
-    <section className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-gray-50 py-12 px-4">
+    <section className="min-h-screen flex items-center justify-center bg-white py-12 px-4">
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.3 }}
-        className="max-w-lg w-full"
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="max-w-xl w-full"
       >
-        {/* Card */}
-        <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-12 text-center border-4 border-gray-100">
-          {/* Icon */}
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-            className="inline-flex items-center justify-center w-24 h-24 rounded-full mb-6"
-            style={{ backgroundColor: `${COLORS.error}20` }}
-          >
-            <MapPin size={48} style={{ color: COLORS.error }} />
-          </motion.div>
+        <div className="bg-white rounded-[40px] shadow-[0_20px_50px_rgba(0,0,0,0.05)] p-10 md:p-16 text-center border border-gray-100">
+          <div className="relative inline-flex items-center justify-center mb-10">
+            <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 3 }} className="absolute inset-0 rounded-full blur-3xl opacity-20 bg-[#FEC925]" />
+            <div className="relative z-10 flex items-center justify-center w-28 h-28 rounded-3xl rotate-12 bg-[#FEC925] shadow-lg">
+              <MapPin size={56} className="text-white -rotate-12" />
+            </div>
+          </div>
 
-          {/* Heading */}
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="text-3xl md:text-4xl font-bold mb-4"
-            style={{ color: COLORS.text }}
-          >
-            No Service
-          </motion.h1>
+          <h1 className="text-4xl md:text-5xl font-black mb-4 tracking-tighter text-[#1C1C1B]">Out of Bounds</h1>
+          <p className="text-lg md:text-xl font-medium leading-relaxed mb-8 px-4 text-[#6C757D]">
+            Currently we are not servicing in {displayCity}. We're working hard to bring FlipCash to your doorstep soon!
+          </p>
 
-          {/* Message */}
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="text-lg md:text-xl mb-8"
-            style={{ color: COLORS.darkGray }}
-          >
-            {displayMessage}
-          </motion.p>
+          <div className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl mb-12 border-2 bg-[#F8F9FA] border-[#E9ECEF] text-[#1C1C1B]">
+            <MapPin size={18} className="text-[#1DB8A0]" />
+            <span className="font-black uppercase tracking-tight text-sm">
+              {displayCity}, {displayState}
+            </span>
+          </div>
 
-          {/* Location Badge */}
-          {(displayCity || displayState) && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-8"
-              style={{
-                backgroundColor: COLORS.lightGray,
-                color: COLORS.darkGray,
-              }}
-            >
-              <MapPin size={16} />
-              <span className="font-semibold">
-                {displayCity}
-                {displayState && `, ${displayState}`}
-              </span>
-            </motion.div>
-          )}
-
-          {/* Buttons */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-            className="flex flex-col sm:flex-row gap-4 justify-center"
-          >
-            {/* Home Button */}
+          <div className="flex justify-center">
             <button
-              onClick={handleGoHome}
-              className="flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-bold text-lg transition-all hover:scale-105 active:scale-95 shadow-lg"
-              style={{
-                backgroundColor: COLORS.success,
-                color: 'white',
-              }}
+              onClick={openCityModal}
+              className="group flex items-center justify-center gap-3 px-10 py-5 rounded-2xl font-black text-lg bg-[#FEC925] text-[#1C1C1B] shadow-[0_10px_20px_rgba(254,201,37,0.3)] hover:scale-105 active:scale-95 transition-all"
             >
-              <Home size={20} />
-              HOME
-            </button>
-
-            {/* Change City Button */}
-            <button
-              onClick={handleChangeCity}
-              className="flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-bold text-lg transition-all hover:scale-105 active:scale-95 border-2"
-              style={{
-                backgroundColor: COLORS.lightGray,
-                borderColor: COLORS.mediumGray,
-                color: COLORS.text,
-              }}
-            >
-              <RefreshCw size={20} />
+              <RefreshCw size={22} className="group-hover:rotate-180 transition-transform duration-500" />
               CHANGE CITY
             </button>
-          </motion.div>
+          </div>
 
-          {/* Info Text */}
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.7 }}
-            className="text-sm mt-8"
-            style={{ color: COLORS.darkGray }}
-          >
-            We're expanding to more cities soon! 🚀
-          </motion.p>
+          <div className="mt-12 pt-8 border-t border-gray-50 flex items-center justify-center gap-2 opacity-60">
+            <Globe size={14} className="text-[#1DB8A0]" />
+            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
+              FlipCash is active in 500+ major cities across India
+            </p>
+          </div>
         </div>
       </motion.div>
     </section>

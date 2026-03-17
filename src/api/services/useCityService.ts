@@ -1,8 +1,7 @@
-// useCityService.ts
-// Custom hook to check if service is available in selected city/state
+// src/api/services/useCityService.ts
 
-import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useState } from 'react';
+import apiClient from '../client/apiClient';
 import { useCityContext } from '../../context/CityContext';
 
 interface ServiceAvailability {
@@ -15,7 +14,8 @@ interface UseCityServiceReturn {
   serviceAvailability: ServiceAvailability;
   loading: boolean;
   error: string | null;
-  checkServiceAvailability: () => Promise<void>;
+  checkPincodeServiceable: (pincode: string) => Promise<boolean>;
+  checkCityServiceable: (cityName: string) => Promise<boolean>;
   hasCategoriesInCity: (categoryId: string) => Promise<boolean>;
 }
 
@@ -23,14 +23,13 @@ const useCityService = (): UseCityServiceReturn => {
   const {
     selectedCity,
     selectedState,
-    selectedPincode,
     isServiceAvailable,
-    setIsServiceAvailable,
   } = useCityContext();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Derived State (Read-only representation of current context)
   const serviceAvailability: ServiceAvailability = {
     isAvailable: isServiceAvailable && !!selectedCity,
     message: !selectedCity
@@ -41,52 +40,76 @@ const useCityService = (): UseCityServiceReturn => {
     needsCitySelection: !selectedCity,
   };
 
-  // Check service availability when city changes
-  useEffect(() => {
-    if (selectedCity && selectedState) {
-      checkServiceAvailability();
-    }
-  }, [selectedCity, selectedState]);
-
-  const checkServiceAvailability = async (): Promise<void> => {
-    if (!selectedCity || !selectedState) {
-      return;
-    }
+  // ============================================================================
+  // 🚀 NEW API: Check specific Pincode using /locations/search/
+  // ============================================================================
+  const checkPincodeServiceable = async (pincode: string): Promise<boolean> => {
+    if (!pincode) return false;
 
     try {
       setLoading(true);
       setError(null);
 
-      // Check if city is active for service
-      const response = await axios.get('/api/ops/check-service-availability/', {
-        params: {
-          city: selectedCity,
-          state: selectedState,
-          pincode: selectedPincode,
-        },
-      });
-
-      const isAvailable = response.data.is_available || false;
-      setIsServiceAvailable(isAvailable);
-    } catch (err: any) {
-      console.error('Failed to check service availability:', err);
-      setError('Failed to check service availability');
+      // Hit the new PincodeSearchView
+      const { data } = await apiClient.get(`/locations/search/?q=${pincode}`);
       
-      // If API fails, assume service is available
-      setIsServiceAvailable(true);
+      // The API returns an array of results. If the pincode exists in an active zone, 
+      // it will be returned with type 'pincode'
+      const isValid = data.results?.some((result: any) => 
+        result.type === 'pincode' && result.pincode === pincode
+      );
+
+      return isValid;
+
+    } catch (err: any) {
+      console.error('Failed to verify pincode:', err);
+      setError('Failed to verify area');
+      return false;
     } finally {
       setLoading(false);
     }
   };
 
+  // ============================================================================
+  // 🚀 NEW API: Check general City using /locations/cities/
+  // ============================================================================
+  const checkCityServiceable = async (cityName: string): Promise<boolean> => {
+    if (!cityName) return false;
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Hit the CityListView
+      const { data } = await apiClient.get(`/locations/cities/?search=${cityName}`);
+      
+      // Ensure the city exists and is active
+      const matchedCity = data.results?.find((c: any) => 
+        c.name.toLowerCase() === cityName.toLowerCase() && c.is_active
+      );
+
+      return !!matchedCity;
+
+    } catch (err: any) {
+      console.error('Failed to verify city:', err);
+      setError('Failed to verify city');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ============================================================================
+  // 📦 RETAINED: Check Category Availability
+  // ============================================================================
   const hasCategoriesInCity = async (categoryId: string): Promise<boolean> => {
     if (!selectedCity || !selectedState) {
       return false;
     }
 
     try {
-      // Check if category has items available in this city
-      const response = await axios.get(`/api/catalog/categories/${categoryId}/check-availability/`, {
+      // Switched from raw axios to apiClient for proper headers and base URL routing
+      const response = await apiClient.get(`/catalog/categories/${categoryId}/check-availability/`, {
         params: {
           city: selectedCity,
           state: selectedState,
@@ -97,7 +120,7 @@ const useCityService = (): UseCityServiceReturn => {
     } catch (err: any) {
       console.error('Failed to check category availability:', err);
       
-      // If API fails, assume category has items
+      // If API fails, safely fallback to true so we don't block the user unnecessarily
       return true;
     }
   };
@@ -106,7 +129,8 @@ const useCityService = (): UseCityServiceReturn => {
     serviceAvailability,
     loading,
     error,
-    checkServiceAvailability,
+    checkPincodeServiceable,
+    checkCityServiceable,
     hasCategoriesInCity,
   };
 };
