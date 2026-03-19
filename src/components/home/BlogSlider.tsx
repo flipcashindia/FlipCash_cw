@@ -29,7 +29,7 @@ const BlogSlider: React.FC = () => {
               <TrendingUp className="text-[#FEC925]" size={24} />
               <span className="text-[10px] font-black text-[#1B8A05] uppercase tracking-[0.3em]">Trending Now</span>
             </div>
-            <h2 className="text-4xl font-black text-[#1C1C1B] tracking-tight">Financial Trends 2024</h2>
+            <h2 className="text-4xl font-black text-[#1C1C1B] tracking-tight">FlipCash Blogs</h2>
           </div>
           <div className="flex gap-4">
             <button onClick={() => handleScroll("left")} className="w-12 h-12 rounded-full border border-[#E0E0E0] bg-white flex items-center justify-center hover:bg-[#FEC925] transition-all"><ChevronLeft size={24} /></button>
