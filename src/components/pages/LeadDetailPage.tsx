@@ -33,15 +33,21 @@ interface Partner {
   rating_average: string; 
   total_leads_completed: number; 
 }
+
 interface PickupAddress { 
   id: string; 
-  address_line1: string; 
+  address_line1?: string; 
+  line1?: string;
   address_line2?: string; 
+  line2?: string;
   city: string; 
   state: string; 
-  pincode: string; 
+  country?: string;
+  pincode?: string; 
+  postal_code?: string;
   landmark?: string; 
 }
+
 interface DevicePhoto { url: string; description: string; }
 
 interface LeadOffer {
@@ -251,6 +257,7 @@ const safeStringify = (value: any): string => {
 
       const data: LeadDetail = await res.json();
       setLeadDetails(data);
+      console.log('Loaded lead details:', data);
       
       // Check rating status for completed leads
       if (data.status === 'completed' && data.assigned_partner) {
@@ -422,24 +429,6 @@ const safeStringify = (value: any): string => {
     }
   };
 
-  // const checkRatingStatus = async (leadId: string) => {
-  //   try {
-  //     const token = localStorage.getItem('access_token');
-  //     if (!token) return;
-
-  //     const userId = localStorage.getItem('user_id');
-  //     const res = await fetch(`${API_BASE_URL}/ops/ratings/?lead=${leadId}&rater=${userId}`, {
-  //       headers: { 'Authorization': `Bearer ${token}` }
-  //     });
-
-  //     if (res.ok) {
-  //       const data = await res.json();
-  //       setHasRated((data.results || data || []).length > 0);
-  //     }
-  //   } catch (err) {
-  //     console.error('Failed to check rating:', err);
-  //   }
-  // };
 
 
 const checkRatingStatus = async (leadId: string) => {
@@ -524,15 +513,6 @@ const checkRatingStatus = async (leadId: string) => {
       setRespondingToOffer(false);
     }
   };
-
-  // const openCounterModal = (offer: LeadOffer) => {
-  //   setSelectedOffer(offer);
-  //   const minPrice = Math.min(parseFloat(offer.system_calculated_price), parseFloat(offer.partner_offered_price));
-  //   const maxPrice = Math.max(parseFloat(offer.system_calculated_price), parseFloat(offer.partner_offered_price));
-  //   const suggestedPrice = Math.round((minPrice + maxPrice) / 2);
-  //   setCounterPrice(suggestedPrice.toString());
-  //   setIsCounterModalOpen(true);
-  // };
 
  
  
@@ -1079,27 +1059,87 @@ const checkRatingStatus = async (leadId: string) => {
               </div>
 
               {/* Pickup Details */}
-              <div className="bg-white p-6 rounded-2xl shadow-xl border-2 border-[#FEC925]/20">
+              <div className="bg-white p-5 md:p-6 rounded-2xl shadow-xl border-2 border-[#FEC925]/20">
                 <div className="flex items-center gap-3 mb-6">
                   <MapPin className="text-[#FEC925]" size={24} />
-                  <h3 className="text-2xl font-bold text-[#1C1C1B]">Pickup Details</h3>
+                  <h3 className="text-xl md:text-2xl font-bold text-[#1C1C1B]">Pickup Details</h3>
                 </div>
-                <div className="space-y-3">
-                  <p className="font-bold text-lg">{leadDetails.pickup_address.address_line1}</p>
-                  {leadDetails.pickup_address.address_line2 && <p className="text-gray-700">{leadDetails.pickup_address.address_line2}</p>}
-                  {leadDetails.pickup_address.landmark && <p className="text-sm text-gray-600">Landmark: {leadDetails.pickup_address.landmark}</p>}
-                  <p className="font-semibold">{leadDetails.pickup_address.city}, {leadDetails.pickup_address.state} - {leadDetails.pickup_address.pincode}</p>
-                  <div className="border-t pt-4 mt-4 space-y-3">
-                    <DetailRow 
-                      label="Date" 
-                      value={new Date(leadDetails.preferred_date).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })} 
-                    />
-                    <DetailRow label="Time Slot" value={leadDetails.preferred_time_slot} />
+
+                <div className="space-y-5">
+                  
+                  {/* Complete Address Card */}
+                  <div className="bg-gray-50 p-4 md:p-5 rounded-xl border border-gray-200 flex items-start gap-3 transition-colors hover:bg-gray-100">
+                    <MapPin className="text-gray-400 shrink-0 mt-0.5" size={20} />
+                    <div className="flex flex-col space-y-1.5 text-sm md:text-base">
+                      {/* Line 1 & 2 */}
+                      <span className="font-bold text-gray-800 leading-tight">
+                        {[
+                          leadDetails.pickup_address.address_line1 || leadDetails.pickup_address.line1,
+                          leadDetails.pickup_address.address_line2 || leadDetails.pickup_address.line2
+                        ].filter(Boolean).join(', ')}
+                      </span>
+                      
+                      {/* Landmark */}
+                      {leadDetails.pickup_address.landmark && (
+                        <span className="text-gray-600 font-medium italic">
+                          Landmark: {leadDetails.pickup_address.landmark}
+                        </span>
+                      )}
+                      
+                      {/* City, State, ZIP */}
+                      <span className="text-gray-600">
+                        {[
+                          leadDetails.pickup_address.city,
+                          leadDetails.pickup_address.state,
+                          leadDetails.pickup_address.country,
+                          leadDetails.pickup_address.pincode || leadDetails.pickup_address.postal_code
+                        ].filter(Boolean).join(', ')}
+                      </span>
+                    </div>
                   </div>
+
+                  {/* Date & Time Grid - Responsive (1 col mobile, 2 col desktop) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                    {/* Date Box */}
+                    <div className="bg-[#F0F7F6] p-4 rounded-xl flex items-center gap-3 border border-[#1B8A05]/15">
+                      <div className="bg-white p-2 rounded-lg shadow-sm">
+                        <Calendar className="text-[#1B8A05]" size={20} />
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-0.5">Scheduled Date</p>
+                        <p className="font-bold text-[#1C1C1B] text-sm md:text-base">
+                          {new Date(leadDetails.preferred_date).toLocaleDateString('en-IN', { 
+                            weekday: 'short', 
+                            day: 'numeric', 
+                            month: 'short', 
+                            year: 'numeric' 
+                          })}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Time Box */}
+                    <div className="bg-[#F0F7F6] p-4 rounded-xl flex items-center gap-3 border border-[#1B8A05]/15">
+                      <div className="bg-white p-2 rounded-lg shadow-sm">
+                        <Clock className="text-[#1B8A05]" size={20} />
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-0.5">Time Slot</p>
+                        <p className="font-bold text-[#1C1C1B] text-sm md:text-base">
+                          {leadDetails.preferred_time_slot}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Customer Notes */}
                   {leadDetails.customer_notes && (
-                    <div className="bg-[#F0F7F6] p-3 rounded-lg border border-[#1B8A05]/20 mt-4">
-                      <p className="font-semibold text-gray-800">Customer Notes:</p>
-                      <p className="text-gray-700 italic">"{leadDetails.customer_notes}"</p>
+                    <div className="bg-[#FFF9E6] p-4 rounded-xl border border-[#FEC925]/30 mt-2 flex items-start gap-3">
+                      <MessageSquare className="text-[#FEC925] shrink-0 mt-0.5" size={20} />
+                      <div>
+                        <p className="text-xs text-gray-600 font-bold uppercase tracking-wider mb-1">Customer Notes</p>
+                        <p className="text-gray-800 font-medium italic">"{leadDetails.customer_notes}"</p>
+                      </div>
                     </div>
                   )}
                 </div>
