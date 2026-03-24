@@ -1,11 +1,14 @@
 import type { BlogPost, PaginatedResponse } from '../types/blog.types.ts';
+import { getBackendBaseUrl } from '../../api/utils/blogUtils';
 
-const getBaseUrl = (): string => {
-  const isProd = window.location.hostname !== 'localhost' && !window.location.hostname.includes('127.0.0.1');
-  return isProd ? 'https://flend.flipcash.com/api/v1' : 'http://localhost:8000/api/v1';
-};
+const BASE_URL = getBackendBaseUrl();
 
-const BASE_URL = getBaseUrl();
+// const getBaseUrl = (): string => {
+//   const isProd = window.location.hostname !== 'localhost' && !window.location.hostname.includes('127.0.0.1');
+//   return isProd ? 'https://flend.flipcash.com/api/v1' : 'http://localhost:8000/api/v1';
+// };
+
+// const BASE_URL = getBaseUrl();
 
 export const blogApi = {
   getPosts: async (categorySlug?: string): Promise<PaginatedResponse<BlogPost> | null> => {
