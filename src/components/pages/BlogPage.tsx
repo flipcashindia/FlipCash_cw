@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Facebook, Twitter, Link2, Mail, Calendar, User } from 'lucide-react';
+import { ArrowLeft, Facebook, Twitter, Link2, Mail, Calendar } from 'lucide-react';
 import type { BlogPost } from '../../api/types/blog.types';
 import { blogApi } from '../../api/services/blogService';
 import { RecentBlogsSidebar, RelatedBlogsFooter } from './RecentAndReleted';
