@@ -4,14 +4,13 @@ import type { BlogPost } from '../../api/types/blog.types';
 import { BlogCard } from '../pages/BlogCard';
 
 
-
 const BlogSection: React.FC = () => {
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     blogApi.getPosts().then(data => {
-      if (data) setBlogs(data.results.slice(0, 6));
+      if (data && data.results) setBlogs(data.results.slice(0, 6));
       setLoading(false);
     });
   }, []);
@@ -28,7 +27,7 @@ const BlogSection: React.FC = () => {
         <div className="text-center mb-16">
           <span className="text-[10px] font-black text-[#1B8A05] uppercase tracking-[0.3em] mb-4 block">Knowledge Hub</span>
           <h2 className="text-4xl md:text-5xl font-black text-[#1C1C1B] mb-6 tracking-tight">Latest Blogs</h2>
-          <div className="h-1.5 w-20 bg-[#FEC925] mx-auto rounded-full"></div>
+          <div className="h-1.5 w-20 bg-[#FEC925] mx-auto rounded-full mb-8"></div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
           {blogs.map((post) => (
