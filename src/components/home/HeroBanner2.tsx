@@ -6,9 +6,9 @@ import { ArrowRight } from "lucide-react";
 // !! IMPORTANT !!
 // The local imports below were causing errors because the files don't exist.
 // I've replaced them with placeholders in the `slides` array.
-import bannerImage1 from "../../assets/banner-phone-case.png"; // Image 1 for slide 1
-import bannerImage2 from "../../assets/banner-magsafe.png"; // Image 2 for slide 2
-import bannerImage3 from "../../assets/banner-earbuds.png"; // Image 3 for slide 3 (Example, replace if needed)
+import bannerImage1 from "../../assets/banner1.jpeg"; // Image 1 for slide 1
+import bannerImage2 from "../../assets/banner2.jpeg"; // Image 2 for slide 2
+import bannerImage3 from "../../assets/banner3.jpeg"; // Image 3 for slide 3 (Example, replace if needed)
 
 interface SlideContent {
   id: number;
