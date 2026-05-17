@@ -26,6 +26,8 @@ import {
   StatusBadge
 } from './index';
 import type { BankAccount } from './finance.types';
+import type { SandboxBank } from '../../config/sandbox';
+import { SandboxBankPicker } from '../sandbox/SandboxTools';
 
 type ModalState = 'closed' | 'add' | 'verify' | 'delete';
 
@@ -443,86 +445,326 @@ interface AddBankAccountModalProps {
   onSuccess: () => void;
 }
 
+
+
+
+// const AddBankAccountModal: React.FC<AddBankAccountModalProps> = ({ onClose, onSuccess }) => {
+//   const [formData, setFormData] = useState({
+//     account_holder_name: '',
+//     account_number: '',
+//     confirm_account_number: '',
+//     ifsc_code: '',
+//     bank_name: '',
+//     account_type: 'savings' as 'savings' | 'current',
+//     branch_name: '',
+//   });
+//   const [showAccountNumber, setShowAccountNumber] = useState(false);
+//   const [loading, setLoading] = useState(false);
+//   const [error, setError] = useState<string | null>(null);
+
+//   const handleSubmit = async (e: React.FormEvent) => {
+//     e.preventDefault();
+    
+//     console.log('🔵 Submitting new bank account:', {
+//       bank: formData.bank_name,
+//       ifsc: formData.ifsc_code,
+//       holder: formData.account_holder_name,
+//     });
+    
+//     // Validation
+//     if (formData.account_number !== formData.confirm_account_number) {
+//       setError('Account numbers do not match');
+//       console.error('❌ Validation failed: Account numbers do not match');
+//       return;
+//     }
+
+//     if (formData.account_number.length < 9 || formData.account_number.length > 18) {
+//       setError('Account number must be between 9 and 18 digits');
+//       console.error('❌ Validation failed: Invalid account number length');
+//       return;
+//     }
+
+//     if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(formData.ifsc_code)) {
+//       setError('Invalid IFSC code format (e.g., HDFC0001234)');
+//       console.error('❌ Validation failed: Invalid IFSC format');
+//       return;
+//     }
+
+//     setLoading(true);
+//     setError(null);
+
+//     try {
+//       const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+//       const response = await fetch(`${apiUrl}/accounts/bank-accounts/`, {
+//         method: 'POST',
+//         headers: {
+//           'Content-Type': 'application/json',
+//           'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+//         },
+//         body: JSON.stringify({
+//           account_holder_name: formData.account_holder_name,
+//           account_number: formData.account_number,
+//           ifsc_code: formData.ifsc_code,
+//           bank_name: formData.bank_name,
+//           account_type: formData.account_type,
+//           branch_name: formData.branch_name,
+//         }),
+//       });
+
+//       const responseData = await response.json();
+//       console.log('📊 API Response:', responseData);
+
+//       if (!response.ok) {
+//         throw new Error(responseData.error || responseData.detail || 'Failed to add bank account');
+//       }
+
+//       console.log('✅ Bank account added successfully');
+//       onSuccess();
+//     } catch (err: any) {
+//       console.error('❌ Failed to add bank account:', err);
+//       setError(err.message || 'Failed to add bank account');
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   return (
+//     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+//       <div className="max-w-md w-full bg-white rounded-xl overflow-hidden max-h-[90vh] overflow-y-auto">
+//         {/* Header */}
+//         <div className="p-6 border-b border-gray-200 bg-[#FEC925]">
+//           <div className="flex items-center justify-between">
+//             <h2 className="text-xl font-bold text-[#1C1C1B]">Add Bank Account</h2>
+//             <button onClick={onClose} className="text-[#1C1C1B] hover:text-gray-700 text-2xl leading-none">
+//               ✕
+//             </button>
+//           </div>
+//         </div>
+
+//         {/* Form */}
+//         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+//           {/* Account Holder Name */}
+//           <div>
+//             <label className="block text-sm font-medium text-gray-700 mb-1">
+//               Account Holder Name *
+//             </label>
+//             <input
+//               type="text"
+//               value={formData.account_holder_name}
+//               onChange={(e) => setFormData({ ...formData, account_holder_name: e.target.value })}
+//               placeholder="As per bank records"
+//               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FEC925] focus:border-transparent"
+//               required
+//             />
+//           </div>
+
+//           {/* Bank Name */}
+//           <div>
+//             <label className="block text-sm font-medium text-gray-700 mb-1">
+//               Bank Name *
+//             </label>
+//             <input
+//               type="text"
+//               value={formData.bank_name}
+//               onChange={(e) => setFormData({ ...formData, bank_name: e.target.value })}
+//               placeholder="e.g., HDFC Bank, SBI, ICICI"
+//               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FEC925] focus:border-transparent"
+//               required
+//             />
+//           </div>
+
+//           {/* Account Number */}
+//           <div>
+//             <label className="block text-sm font-medium text-gray-700 mb-1">
+//               Account Number *
+//             </label>
+//             <div className="relative">
+//               <input
+//                 type={showAccountNumber ? 'text' : 'password'}
+//                 value={formData.account_number}
+//                 onChange={(e) => setFormData({ ...formData, account_number: e.target.value.replace(/\D/g, '') })}
+//                 placeholder="Enter account number"
+//                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FEC925] focus:border-transparent pr-10"
+//                 required
+//               />
+//               <button
+//                 type="button"
+//                 onClick={() => setShowAccountNumber(!showAccountNumber)}
+//                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+//               >
+//                 {showAccountNumber ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+//               </button>
+//             </div>
+//           </div>
+
+//           {/* Confirm Account Number */}
+//           <div>
+//             <label className="block text-sm font-medium text-gray-700 mb-1">
+//               Confirm Account Number *
+//             </label>
+//             <input
+//               type={showAccountNumber ? 'text' : 'password'}
+//               value={formData.confirm_account_number}
+//               onChange={(e) => setFormData({ ...formData, confirm_account_number: e.target.value.replace(/\D/g, '') })}
+//               placeholder="Re-enter account number"
+//               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FEC925] focus:border-transparent"
+//               required
+//             />
+//           </div>
+
+//           {/* IFSC Code */}
+//           <div>
+//             <label className="block text-sm font-medium text-gray-700 mb-1">
+//               IFSC Code *
+//             </label>
+//             <input
+//               type="text"
+//               value={formData.ifsc_code}
+//               onChange={(e) => setFormData({ ...formData, ifsc_code: e.target.value.toUpperCase() })}
+//               placeholder="e.g., HDFC0001234"
+//               maxLength={11}
+//               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FEC925] focus:border-transparent font-mono"
+//               required
+//             />
+//             <p className="text-xs text-gray-500 mt-1">Format: 4 letters, 0, then 6 characters</p>
+//           </div>
+
+//           {/* Account Type */}
+//           <div>
+//             <label className="block text-sm font-medium text-gray-700 mb-1">
+//               Account Type *
+//             </label>
+//             <select
+//               value={formData.account_type}
+//               onChange={(e) => setFormData({ ...formData, account_type: e.target.value as 'savings' | 'current' })}
+//               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FEC925] focus:border-transparent"
+//               required
+//             >
+//               <option value="savings">Savings</option>
+//               <option value="current">Current</option>
+//             </select>
+//           </div>
+
+//           {/* Branch Name */}
+//           <div>
+//             <label className="block text-sm font-medium text-gray-700 mb-1">
+//               Branch Name (Optional)
+//             </label>
+//             <input
+//               type="text"
+//               value={formData.branch_name}
+//               onChange={(e) => setFormData({ ...formData, branch_name: e.target.value })}
+//               placeholder="e.g., Connaught Place, Delhi"
+//               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FEC925] focus:border-transparent"
+//             />
+//           </div>
+
+//           {/* Error Message */}
+//           {error && (
+//             <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+//               <div className="flex items-start gap-2">
+//                 <XCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+//                 <p className="text-sm text-red-800">{error}</p>
+//               </div>
+//             </div>
+//           )}
+
+//           {/* Submit */}
+//           <div className="flex gap-3 pt-4">
+//             <Button type="button" variant="outline" fullWidth onClick={onClose} disabled={loading}>
+//               Cancel
+//             </Button>
+//             <Button type="submit" fullWidth loading={loading}>
+//               {loading ? 'Adding...' : 'Add Account'}
+//             </Button>
+//           </div>
+//         </form>
+//       </div>
+//     </div>
+//   );
+// };
+
+
+
+
 const AddBankAccountModal: React.FC<AddBankAccountModalProps> = ({ onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
-    account_holder_name: '',
-    account_number: '',
+    account_holder_name:    '',
+    account_number:         '',
     confirm_account_number: '',
-    ifsc_code: '',
-    bank_name: '',
-    account_type: 'savings' as 'savings' | 'current',
-    branch_name: '',
+    ifsc_code:              '',
+    bank_name:              '',
+    account_type:           'savings' as 'savings' | 'current',
+    branch_name:            '',
   });
   const [showAccountNumber, setShowAccountNumber] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
+  const [loading, setLoading]   = useState(false);
+  const [error,   setError]     = useState<string | null>(null);
+ 
+  // ── Sandbox auto-fill ────────────────────────────────────────────────────
+  const handleSandboxSelect = (bank: SandboxBank) => {
+    setFormData(prev => ({
+      ...prev,
+      account_number:         bank.account,
+      confirm_account_number: bank.account,
+      ifsc_code:              bank.ifsc,
+      bank_name:              bank.bank,
+      branch_name:            'Sandbox Branch',
+      account_holder_name:    prev.account_holder_name || 'Sandbox Test User',
+    }));
+    setError(null);
+  };
+  // ────────────────────────────────────────────────────────────────────────
+ 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    console.log('🔵 Submitting new bank account:', {
-      bank: formData.bank_name,
-      ifsc: formData.ifsc_code,
-      holder: formData.account_holder_name,
-    });
-    
-    // Validation
+ 
     if (formData.account_number !== formData.confirm_account_number) {
       setError('Account numbers do not match');
-      console.error('❌ Validation failed: Account numbers do not match');
       return;
     }
-
     if (formData.account_number.length < 9 || formData.account_number.length > 18) {
       setError('Account number must be between 9 and 18 digits');
-      console.error('❌ Validation failed: Invalid account number length');
       return;
     }
-
     if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(formData.ifsc_code)) {
       setError('Invalid IFSC code format (e.g., HDFC0001234)');
-      console.error('❌ Validation failed: Invalid IFSC format');
       return;
     }
-
+ 
     setLoading(true);
     setError(null);
-
+ 
     try {
-      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+      const apiUrl   = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
       const response = await fetch(`${apiUrl}/accounts/bank-accounts/`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type':  'application/json',
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
         },
         body: JSON.stringify({
           account_holder_name: formData.account_holder_name,
-          account_number: formData.account_number,
-          ifsc_code: formData.ifsc_code,
-          bank_name: formData.bank_name,
-          account_type: formData.account_type,
-          branch_name: formData.branch_name,
+          account_number:      formData.account_number,
+          ifsc_code:           formData.ifsc_code,
+          bank_name:           formData.bank_name,
+          account_type:        formData.account_type,
+          branch_name:         formData.branch_name,
         }),
       });
-
+ 
       const responseData = await response.json();
-      console.log('📊 API Response:', responseData);
-
       if (!response.ok) {
         throw new Error(responseData.error || responseData.detail || 'Failed to add bank account');
       }
-
-      console.log('✅ Bank account added successfully');
       onSuccess();
     } catch (err: any) {
-      console.error('❌ Failed to add bank account:', err);
       setError(err.message || 'Failed to add bank account');
     } finally {
       setLoading(false);
     }
   };
-
+ 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="max-w-md w-full bg-white rounded-xl overflow-hidden max-h-[90vh] overflow-y-auto">
@@ -530,14 +772,20 @@ const AddBankAccountModal: React.FC<AddBankAccountModalProps> = ({ onClose, onSu
         <div className="p-6 border-b border-gray-200 bg-[#FEC925]">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-[#1C1C1B]">Add Bank Account</h2>
-            <button onClick={onClose} className="text-[#1C1C1B] hover:text-gray-700 text-2xl leading-none">
-              ✕
-            </button>
+            <button onClick={onClose} className="text-[#1C1C1B] hover:text-gray-700 text-2xl leading-none">✕</button>
           </div>
         </div>
-
+ 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+ 
+          {/* ── SANDBOX BANK PICKER (only visible in sandbox mode) ── */}
+          <SandboxBankPicker
+            onSelect={handleSandboxSelect}
+            successOnly  // only show success-result banks in the add-bank modal
+          />
+          {/* ──────────────────────────────────────────────────────── */}
+ 
           {/* Account Holder Name */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -546,138 +794,134 @@ const AddBankAccountModal: React.FC<AddBankAccountModalProps> = ({ onClose, onSu
             <input
               type="text"
               value={formData.account_holder_name}
-              onChange={(e) => setFormData({ ...formData, account_holder_name: e.target.value })}
+              onChange={e => setFormData({ ...formData, account_holder_name: e.target.value })}
               placeholder="As per bank records"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FEC925] focus:border-transparent"
               required
             />
           </div>
-
+ 
           {/* Bank Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Bank Name *
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Bank Name *</label>
             <input
               type="text"
               value={formData.bank_name}
-              onChange={(e) => setFormData({ ...formData, bank_name: e.target.value })}
+              onChange={e => setFormData({ ...formData, bank_name: e.target.value })}
               placeholder="e.g., HDFC Bank, SBI, ICICI"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FEC925] focus:border-transparent"
               required
             />
           </div>
-
+ 
           {/* Account Number */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Account Number *
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Account Number *</label>
             <div className="relative">
               <input
                 type={showAccountNumber ? 'text' : 'password'}
                 value={formData.account_number}
-                onChange={(e) => setFormData({ ...formData, account_number: e.target.value.replace(/\D/g, '') })}
+                onChange={e => setFormData({ ...formData, account_number: e.target.value.replace(/\D/g, '') })}
                 placeholder="Enter account number"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FEC925] focus:border-transparent pr-10"
+                className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FEC925] focus:border-transparent font-mono"
                 required
               />
               <button
                 type="button"
-                onClick={() => setShowAccountNumber(!showAccountNumber)}
+                onClick={() => setShowAccountNumber(v => !v)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
               >
-                {showAccountNumber ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {showAccountNumber ? '🙈' : '👁'}
               </button>
             </div>
           </div>
-
+ 
           {/* Confirm Account Number */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Confirm Account Number *
-            </label>
-            <input
-              type={showAccountNumber ? 'text' : 'password'}
-              value={formData.confirm_account_number}
-              onChange={(e) => setFormData({ ...formData, confirm_account_number: e.target.value.replace(/\D/g, '') })}
-              placeholder="Re-enter account number"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FEC925] focus:border-transparent"
-              required
-            />
-          </div>
-
-          {/* IFSC Code */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              IFSC Code *
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Account Number *</label>
             <input
               type="text"
-              value={formData.ifsc_code}
-              onChange={(e) => setFormData({ ...formData, ifsc_code: e.target.value.toUpperCase() })}
-              placeholder="e.g., HDFC0001234"
-              maxLength={11}
+              value={formData.confirm_account_number}
+              onChange={e => setFormData({ ...formData, confirm_account_number: e.target.value.replace(/\D/g, '') })}
+              placeholder="Re-enter account number"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FEC925] focus:border-transparent font-mono"
               required
             />
-            <p className="text-xs text-gray-500 mt-1">Format: 4 letters, 0, then 6 characters</p>
+            {formData.confirm_account_number && formData.account_number !== formData.confirm_account_number && (
+              <p className="text-xs text-red-500 mt-1">Account numbers do not match</p>
+            )}
+            {formData.confirm_account_number && formData.account_number === formData.confirm_account_number && (
+              <p className="text-xs text-green-500 mt-1">✓ Account numbers match</p>
+            )}
           </div>
-
+ 
+          {/* IFSC Code */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">IFSC Code *</label>
+            <input
+              type="text"
+              value={formData.ifsc_code}
+              onChange={e => setFormData({ ...formData, ifsc_code: e.target.value.toUpperCase().replace(/\s/g, '') })}
+              placeholder="e.g., HDFC0001234"
+              maxLength={11}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FEC925] focus:border-transparent font-mono uppercase"
+              required
+            />
+          </div>
+ 
           {/* Account Type */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Account Type *
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Account Type</label>
             <select
               value={formData.account_type}
-              onChange={(e) => setFormData({ ...formData, account_type: e.target.value as 'savings' | 'current' })}
+              onChange={e => setFormData({ ...formData, account_type: e.target.value as 'savings' | 'current' })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FEC925] focus:border-transparent"
-              required
             >
               <option value="savings">Savings</option>
               <option value="current">Current</option>
             </select>
           </div>
-
+ 
           {/* Branch Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Branch Name (Optional)
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Branch Name</label>
             <input
               type="text"
               value={formData.branch_name}
-              onChange={(e) => setFormData({ ...formData, branch_name: e.target.value })}
-              placeholder="e.g., Connaught Place, Delhi"
+              onChange={e => setFormData({ ...formData, branch_name: e.target.value })}
+              placeholder="Optional"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FEC925] focus:border-transparent"
             />
           </div>
-
-          {/* Error Message */}
+ 
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-              <div className="flex items-start gap-2">
-                <XCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-red-800">{error}</p>
-              </div>
-            </div>
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>
           )}
-
-          {/* Submit */}
-          <div className="flex gap-3 pt-4">
-            <Button type="button" variant="outline" fullWidth onClick={onClose} disabled={loading}>
+ 
+          <div className="flex gap-3 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 py-3 border-2 border-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+            >
               Cancel
-            </Button>
-            <Button type="submit" fullWidth loading={loading}>
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 py-3 bg-[#FEC925] text-[#1C1C1B] rounded-lg font-bold hover:bg-yellow-400 transition-colors disabled:opacity-60"
+            >
               {loading ? 'Adding...' : 'Add Account'}
-            </Button>
+            </button>
           </div>
         </form>
       </div>
     </div>
   );
 };
+ 
+
+
 
 // =============================================================================
 // VERIFY BANK ACCOUNT MODAL - MANUAL TRIGGER ONLY

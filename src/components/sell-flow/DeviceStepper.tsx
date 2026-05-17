@@ -126,10 +126,10 @@ const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ message, onDismiss }) => (
 const DeviceStepper: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   const { modelId: modelIdFromState, model: modelFromState } = (location.state || {}) as LocationState;
   const modelId = modelIdFromState || modelFromState?.id;
-  
+
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -140,12 +140,12 @@ const DeviceStepper: React.FC = () => {
   const [showPrice, setShowPrice] = useState(false);
 
   const [groupedAttributes, setGroupedAttributes] = useState<Record<string, DeviceAttribute[]>>({});
-  const [groupKeys, setGroupKeys] = useState<string[]>([]); 
-  const [activeGroupIndex, setActiveGroupIndex] = useState(0); 
+  const [groupKeys, setGroupKeys] = useState<string[]>([]);
+  const [activeGroupIndex, setActiveGroupIndex] = useState(0);
 
   const [conditionResponses, setConditionResponses] = useState<Record<string, any>>({});
   const [estimate, setEstimate] = useState<EstimateResponse | null>(null);
-  
+
   const [addresses, setAddresses] = useState<UserAddress[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState('');
   const [preferredDate, setPreferredDate] = useState('');
@@ -169,6 +169,11 @@ const DeviceStepper: React.FC = () => {
     { value: 'evening', label: 'Evening (5PM - 9PM)' },
   ];
 
+
+  // Grab the city from wherever your app stores the user's location 
+  // (e.g., localStorage, a context hook, or global state)
+  const userCity = localStorage.getItem('flipcash_selected_city') || 'Delhi';
+
   // Helper to determine if we should block the user (No variants + No base price)
   const isSellable = () => {
     if (!modelDetails) return false;
@@ -190,7 +195,7 @@ const DeviceStepper: React.FC = () => {
   // Auto-select if ONLY ONE variant
   useEffect(() => {
     if (variants.length === 1 && !selectedVariant) {
-        handleVariantSelection(variants[0]);
+      handleVariantSelection(variants[0]);
     }
   }, [variants]);
 
@@ -240,7 +245,7 @@ const DeviceStepper: React.FC = () => {
   //       acc[type].push(attr);
   //       return acc;
   //     }, {});
-      
+
   //     setGroupedAttributes(groups);
   //     setGroupKeys(Object.keys(groups)); 
 
@@ -262,29 +267,31 @@ const DeviceStepper: React.FC = () => {
         fetch(`${API_BASE_URL}/catalog/models/${id}/`),
         fetch(`${API_BASE_URL}/catalog/models/${id}/attributes/`),
         // 👇 CHANGED: Use the nested model variants endpoint which returns a flat list
-        fetch(`${API_BASE_URL}/catalog/models/${id}/variants/`) 
+        fetch(`${API_BASE_URL}/catalog/models/${id}/variants/`)
       ]);
 
       if (!modelRes.ok) throw new Error(`Failed to load model details`);
       if (!attrsRes.ok) throw new Error(`Failed to load device attributes`);
 
       const modelData: ModelData = await modelRes.json();
-      
+
       // 👇 CHANGED: Safely extract attributes whether paginated (.results) or direct
       const rawAttrs = await attrsRes.json();
-      const attrsData: DeviceAttribute[] = Array.isArray(rawAttrs) 
-        ? rawAttrs 
+      console.log('raw attributes : ', rawAttrs);
+
+      const attrsData: DeviceAttribute[] = Array.isArray(rawAttrs)
+        ? rawAttrs
         : (rawAttrs.results || []);
 
       let variantsData: DeviceVariant[] = [];
       if (variantsRes.ok) {
         const rawVariants = await variantsRes.json();
-        
+
         // 👇 CHANGED: Safely extract variants whether paginated (.results) or direct
-        variantsData = Array.isArray(rawVariants) 
-          ? rawVariants 
+        variantsData = Array.isArray(rawVariants)
+          ? rawVariants
           : (rawVariants.results || []);
-          
+
         variantsData = variantsData.filter((v: DeviceVariant) => v.is_available);
         setVariants(variantsData);
       }
@@ -311,9 +318,9 @@ const DeviceStepper: React.FC = () => {
         acc[type].push(attr);
         return acc;
       }, {});
-      
+
       setGroupedAttributes(groups);
-      setGroupKeys(Object.keys(groups)); 
+      setGroupKeys(Object.keys(groups));
 
     } catch (error: any) {
       console.error('Failed to load stepper data:', error);
@@ -344,7 +351,8 @@ const DeviceStepper: React.FC = () => {
   //   } finally {
   //     setLoading(false);
   //   }
-  // };
+  // };   
+  // 
 
   const loadAddresses = async () => {
     try {
@@ -352,20 +360,20 @@ const DeviceStepper: React.FC = () => {
       setError(null);
       const token = localStorage.getItem('access_token');
       if (!token) throw new Error("You must be logged in to select an address.");
-      
+
       const res = await fetch(`${API_BASE_URL}/accounts/addresses/`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      
+
       if (!res.ok) throw new Error(`Failed to load addresses`);
-      
+
       const rawData = await res.json();
-      
+
       // 👇 SAFELY EXTRACT ARRAY: Handles both paginated (.results) and unpaginated responses
-      const data: UserAddress[] = Array.isArray(rawData) 
-        ? rawData 
+      const data: UserAddress[] = Array.isArray(rawData)
+        ? rawData
         : (rawData.results || []);
-        
+
       setAddresses(data);
       const defaultAddr = data.find((a) => a.is_default);
       if (defaultAddr) setSelectedAddressId(defaultAddr.id);
@@ -426,27 +434,27 @@ const DeviceStepper: React.FC = () => {
     // STEP 1: VARIANT SELECTION
     if (step === 1) {
       if (!modelDetails) return;
-      
+
       // If NOT sellable (No variants, No base price), stop here.
       if (!isSellable()) {
         return;
       }
-      
+
       if (variants.length > 0) {
         if (!selectedVariant) {
-            setError('Please select a device variant.');
-            return;
-          }
-        } else {
-          if (modelDetails.storage_options.length > 0 && !conditionResponses['storage']) {
-            setError('Please select a storage option.');
-            return;
-          }
-          if (modelDetails.ram_options.length > 0 && !conditionResponses['ram']) {
-            setError('Please select a RAM option.');
-            return;
-          }
+          setError('Please select a device variant.');
+          return;
         }
+      } else {
+        if (modelDetails.storage_options.length > 0 && !conditionResponses['storage']) {
+          setError('Please select a storage option.');
+          return;
+        }
+        if (modelDetails.ram_options.length > 0 && !conditionResponses['ram']) {
+          setError('Please select a RAM option.');
+          return;
+        }
+      }
       setActiveGroupIndex(0);
       setStep(2);
     }
@@ -541,6 +549,8 @@ const DeviceStepper: React.FC = () => {
         ram: ram,
         color: color,
         condition_inputs: allResponses,
+        // OLD: city: userCity,
+        city_name: userCity,
       };
 
       const estimateRes = await fetch(`${API_BASE_URL}/pricing/estimate/`, {
@@ -559,7 +569,19 @@ const DeviceStepper: React.FC = () => {
 
       const estimateData: EstimateResponse = await estimateRes.json();
       setEstimate(estimateData);
-      setStep(3); 
+      console.log('Estimate received:', estimateData);
+      // --- NEW LOGS START ---
+      console.log('✅ Estimate received successfully!');
+      console.log(`💰 Base Price: ₹${estimateData.base_price} | Final Price: ₹${estimateData.final_price}`);
+
+      if (estimateData.deductions && estimateData.deductions.length > 0) {
+        console.log(`📉 Total Deducted: ₹${estimateData.total_deductions}`);
+        console.table(estimateData.deductions); // Shows deductions in a neat table
+      } else {
+        console.log('✨ No deductions applied!');
+      }
+      // --- NEW LOGS END ---
+      setStep(3);
 
     } catch (error: any) {
       console.error('Failed to get estimate:', error);
@@ -618,14 +640,14 @@ const DeviceStepper: React.FC = () => {
       setLoading(false);
     }
   };
-  
+
   const getNext5Days = () => {
     const days = [];
     const today = new Date();
     for (let i = 1; i <= 5; i++) {
       const date = new Date(today);
       date.setDate(today.getDate() + i);
-      const value = date.toISOString().split('T')[0]; 
+      const value = date.toISOString().split('T')[0];
       const dayName = date.toLocaleDateString('en-IN', { weekday: 'short' });
       const dateNum = date.getDate();
       const monthName = date.toLocaleDateString('en-IN', { month: 'short' });
@@ -639,7 +661,7 @@ const DeviceStepper: React.FC = () => {
   };
 
   const availableDates = getNext5Days();
-  
+
   const renderLoading = () => (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#F0F7F6] via-white to-[#EAF6F4] px-4">
       <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
@@ -649,15 +671,36 @@ const DeviceStepper: React.FC = () => {
     </div>
   );
 
+  // OLD CODE (COMMENTED OUT):
+  // const getBooleanMapping = (attrName: string, isTrue: boolean) => {
+  //   switch (attrName) {
+  //     case 'wifi':
+  //     case 'bluetooth':
+  //       return isTrue ? 'Working' : 'Not Working';
+  //     case 'camera_glass':
+  //       return isTrue ? 'Broken' : 'Not Broken';
+  //     default:
+  //       // calls_working, touch_working, screen_original, under_warranty, etc.
+  //       return isTrue ? 'Yes' : 'No';
+  //   }
+  // };
+
   const renderAttributeInput = (attr: DeviceAttribute) => {
+    // OLD CODE (COMMENTED OUT):
+    /*
     if (attr.is_boolean) {
+      const trueVal = getBooleanMapping(attr.name, true);
+      const falseVal = getBooleanMapping(attr.name, false);
+
       return (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
           <button
             type="button"
-            onClick={() => handleResponseChange(attr.name, "true")}
+            // OLD: onClick={() => handleResponseChange(attr.name, "true")}
+            onClick={() => handleResponseChange(attr.name, trueVal)}
             className={`p-3 md:p-4 border-2 rounded-lg md:rounded-xl font-medium transition-all text-sm md:text-base ${
-              conditionResponses[attr.name] === "true"
+              // OLD: conditionResponses[attr.name] === "true"
+              conditionResponses[attr.name] === trueVal
                 ? 'bg-[#1B8A05]/10 border-[#1B8A05] ring-2 ring-[#1B8A05]/50'
                 : 'border-gray-300 hover:border-[#FEC925]'
             }`}
@@ -666,9 +709,11 @@ const DeviceStepper: React.FC = () => {
           </button>
           <button
             type="button"
-            onClick={() => handleResponseChange(attr.name, "false")}
+            // OLD: onClick={() => handleResponseChange(attr.name, "false")}
+            onClick={() => handleResponseChange(attr.name, falseVal)}
             className={`p-3 md:p-4 border-2 rounded-lg md:rounded-xl font-medium transition-all text-sm md:text-base ${
-              conditionResponses[attr.name] === "false"
+              // OLD: conditionResponses[attr.name] === "false"
+              conditionResponses[attr.name] === falseVal
                 ? 'bg-[#FF0000]/10 border-[#FF0000] ring-2 ring-[#FF0000]/50'
                 : 'border-gray-300 hover:border-[#FEC925]'
             }`}
@@ -697,6 +742,36 @@ const DeviceStepper: React.FC = () => {
         </div>
       );
     }
+    */
+
+    // NEW CODE: Use price_impact keys as options dynamically
+    const priceImpactObj = (attr as any).price_impact;
+    let optionsList: string[] = [];
+    if (priceImpactObj && Object.keys(priceImpactObj).length > 0) {
+      optionsList = Object.keys(priceImpactObj);
+    } else {
+      optionsList = (attr.options && attr.options.length > 0)
+        ? attr.options
+        : (attr.is_boolean ? ['Yes', 'No'] : []);
+    }
+
+    return (
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+        {optionsList.map((option) => (
+          <button
+            key={option}
+            type="button"
+            onClick={() => handleResponseChange(attr.name, option)}
+            className={`p-3 md:p-4 border-2 rounded-lg md:rounded-xl text-center transition-all text-sm md:text-base ${conditionResponses[attr.name] === option
+              ? 'bg-[#FEC925]/20 border-[#FEC925] ring-2 ring-[#FEC925]/50 font-bold'
+              : 'border-gray-300 hover:border-[#FEC925]'
+              }`}
+          >
+            {option}
+          </button>
+        ))}
+      </div>
+    );
   };
 
   const renderVariantOptions = (title: string, fieldName: 'storage' | 'ram' | 'color', options: string[]) => {
@@ -715,11 +790,10 @@ const DeviceStepper: React.FC = () => {
               key={option}
               type="button"
               onClick={() => handleResponseChange(fieldName, option)}
-              className={`group relative p-3 md:p-4 border-2 rounded-lg md:rounded-xl text-center transition-all text-sm md:text-base font-semibold overflow-hidden ${
-                conditionResponses[fieldName] === option
-                  ? 'bg-[#FEC925] border-[#FEC925] ring-4 ring-[#FEC925]/30 text-[#1C1C1B] shadow-lg scale-105'
-                  : 'bg-white border-gray-300 hover:border-[#FEC925] hover:shadow-md text-gray-700 hover:scale-102'
-              }`}
+              className={`group relative p-3 md:p-4 border-2 rounded-lg md:rounded-xl text-center transition-all text-sm md:text-base font-semibold overflow-hidden ${conditionResponses[fieldName] === option
+                ? 'bg-[#FEC925] border-[#FEC925] ring-4 ring-[#FEC925]/30 text-[#1C1C1B] shadow-lg scale-105'
+                : 'bg-white border-gray-300 hover:border-[#FEC925] hover:shadow-md text-gray-700 hover:scale-102'
+                }`}
             >
               <span className="relative z-10 block">
                 {option}
@@ -742,7 +816,7 @@ const DeviceStepper: React.FC = () => {
 
   const renderCurrentAttributeGroup = () => {
     if (activeGroupIndex >= groupKeys.length) return null;
-    
+
     const groupName = groupKeys[activeGroupIndex];
     const attrs = groupedAttributes[groupName];
     const requiredAttrs = attrs.filter(a => a.is_required);
@@ -752,7 +826,7 @@ const DeviceStepper: React.FC = () => {
         <legend className="text-lg md:text-2xl font-bold text-[#1C1C1B] pb-1.5 md:pb-2 border-b-2 border-[#FEC925]">
           {groupName} ({activeGroupIndex + 1}/{groupKeys.length})
         </legend>
-        
+
         {requiredAttrs.map((attr) => (
           <div key={attr.id} className="border-b border-gray-100 pb-4 md:pb-6">
             <label className="block font-semibold text-base md:text-lg text-[#1C1C1B] mb-2 md:mb-3">
@@ -789,15 +863,13 @@ const DeviceStepper: React.FC = () => {
           <div className="flex items-center justify-between mb-2">
             {['Variant', 'Condition', 'Estimate', 'Pickup'].map((label, idx) => (
               <div key={idx} className="flex-1 text-center last:flex-initial">
-                <div className={`w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 rounded-full mx-auto mb-1 md:mb-2 flex items-center justify-center font-bold text-sm md:text-lg ${
-                  step > idx + 1 ? 'bg-[#1B8A05] text-white' :
+                <div className={`w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 rounded-full mx-auto mb-1 md:mb-2 flex items-center justify-center font-bold text-sm md:text-lg ${step > idx + 1 ? 'bg-[#1B8A05] text-white' :
                   step === idx + 1 ? 'bg-gradient-to-br from-[#FEC925] to-[#1B8A05] text-[#1C1C1B]' : 'bg-gray-300 text-gray-700'
-                }`}>
+                  }`}>
                   {step > idx + 1 ? <CheckCircle size={14} className="sm:w-4 sm:h-4 md:w-5 md:h-5" /> : idx + 1}
                 </div>
-                <p className={`text-[10px] sm:text-xs md:text-sm font-semibold ${
-                  step >= idx + 1 ? 'text-[#1C1C1B]' : 'text-gray-500'
-                }`}>{label}</p>
+                <p className={`text-[10px] sm:text-xs md:text-sm font-semibold ${step >= idx + 1 ? 'text-[#1C1C1B]' : 'text-gray-500'
+                  }`}>{label}</p>
               </div>
             ))}
           </div>
@@ -829,11 +901,11 @@ const DeviceStepper: React.FC = () => {
 
               {/* Step 1: Variant Selection */}
               {step === 1 && modelDetails && (
-                <motion.div 
-                  key="step1" 
-                  initial={{ opacity: 0 }} 
-                  animate={{ opacity: 1 }} 
-                  exit={{ opacity: 0 }} 
+                <motion.div
+                  key="step1"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
                   className="space-y-4 md:space-y-6"
                 >
                   <div className="text-center mb-4 md:mb-6">
@@ -858,21 +930,21 @@ const DeviceStepper: React.FC = () => {
 
                     {/* Right: Variant Options / Info */}
                     <div className="w-full md:w-3/5 lg:w-3/5">
-                      
+
                       {/* CASE 1: EXACTLY ONE VARIANT (HIDE SELECTION, SHOW SUMMARY) */}
                       {variants.length === 1 && selectedVariant ? (
                         <div className="space-y-6">
                           <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-6 rounded-xl border-2 border-gray-200 text-center">
                             {variants.length > 1 && (
                               <>
-                              <h3 className="text-xl font-bold text-gray-800 mb-2">Device Specification</h3>
+                                <h3 className="text-xl font-bold text-gray-800 mb-2">Device Specification</h3>
                                 <p className="text-2xl font-bold text-[#1C1C1B] mb-4">
                                   {selectedVariant.ram} / {selectedVariant.storage}
                                 </p>
-                                </>
-                                ) 
-                                }
-                            
+                              </>
+                            )
+                            }
+
                             <div className="flex flex-col items-center justify-center border-t border-gray-300 pt-4">
                               <p className="text-sm text-gray-600 mb-1 font-medium">Base Price</p>
                               <p className="text-4xl font-bold text-[#1B8A05]">
@@ -881,122 +953,121 @@ const DeviceStepper: React.FC = () => {
                             </div>
                           </div>
                         </div>
-                      ) : 
-                      
-                      /* CASE 2: MULTIPLE VARIANTS (SHOW BUTTONS) Device specification*/
-                      variants.length > 1 ? (
-                        <div className="space-y-4">
-                          <div className="mb-4">
-                            <h3 className="text-lg md:text-xl font-bold text-gray-600 mb-1">Choose a variant</h3>
-                          </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                            {variants.map((variant) => {
-                              const isSelected = selectedVariant?.id === variant.id;
-                              const displayText = `${variant.ram}/${variant.storage}`;
-                              
-                              return (
-                                <button
-                                  key={variant.id}
-                                  type="button"
-                                  onClick={() => handleVariantSelection(variant)}
-                                  className={`group relative p-4 border-2 rounded-lg text-center transition-all font-semibold overflow-hidden ${
-                                    isSelected
+                      ) :
+
+                        /* CASE 2: MULTIPLE VARIANTS (SHOW BUTTONS) Device specification*/
+                        variants.length > 1 ? (
+                          <div className="space-y-4">
+                            <div className="mb-4">
+                              <h3 className="text-lg md:text-xl font-bold text-gray-600 mb-1">Choose a variant</h3>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                              {variants.map((variant) => {
+                                const isSelected = selectedVariant?.id === variant.id;
+                                const displayText = `${variant.ram}/${variant.storage}`;
+
+                                return (
+                                  <button
+                                    key={variant.id}
+                                    type="button"
+                                    onClick={() => handleVariantSelection(variant)}
+                                    className={`group relative p-4 border-2 rounded-lg text-center transition-all font-semibold overflow-hidden ${isSelected
                                       ? 'bg-white border-gray-800 ring-2 ring-gray-800 text-[#1C1C1B] shadow-md'
                                       : 'bg-white border-gray-300 hover:border-gray-600 text-gray-700'
-                                  }`}
-                                >
-                                  <span className="relative z-10 block text-sm md:text-base">
-                                    {displayText}
-                                  </span>
-                                  
-                                  {isSelected && (
-                                    <motion.div
-                                      initial={{ scale: 0 }}
-                                      animate={{ scale: 1 }}
-                                      className="absolute top-1 right-1 w-5 h-5 bg-gray-800 rounded-full flex items-center justify-center"
-                                    >
-                                      <CheckCircle size={14} className="text-white" />
-                                    </motion.div>
-                                  )}
-                                </button>
-                              );
-                            })}
-                          </div>
+                                      }`}
+                                  >
+                                    <span className="relative z-10 block text-sm md:text-base">
+                                      {displayText}
+                                    </span>
 
-                          <AnimatePresence>
-                            {showPrice && selectedVariant && (
-                              <motion.div
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: 'auto' }}
-                                exit={{ opacity: 0, height: 0 }}
-                                className="bg-gradient-to-r from-gray-50 to-gray-100 p-4 rounded-lg border-2 border-gray-200"
-                              >
-                                <div className="flex items-center justify-between">
-                                  <div>
-                                    <p className="text-sm text-gray-600 mb-1">Base Price</p>
-                                    <p className="text-2xl md:text-3xl font-bold text-[#1B8A05]">
-                                      ₹{parseFloat(selectedVariant.effective_price).toLocaleString('en-IN')}
-                                    </p>
+                                    {isSelected && (
+                                      <motion.div
+                                        initial={{ scale: 0 }}
+                                        animate={{ scale: 1 }}
+                                        className="absolute top-1 right-1 w-5 h-5 bg-gray-800 rounded-full flex items-center justify-center"
+                                      >
+                                        <CheckCircle size={14} className="text-white" />
+                                      </motion.div>
+                                    )}
+                                  </button>
+                                );
+                              })}
+                            </div>
+
+                            <AnimatePresence>
+                              {showPrice && selectedVariant && (
+                                <motion.div
+                                  initial={{ opacity: 0, height: 0 }}
+                                  animate={{ opacity: 1, height: 'auto' }}
+                                  exit={{ opacity: 0, height: 0 }}
+                                  className="bg-gradient-to-r from-gray-50 to-gray-100 p-4 rounded-lg border-2 border-gray-200"
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <p className="text-sm text-gray-600 mb-1">Base Price</p>
+                                      <p className="text-2xl md:text-3xl font-bold text-[#1B8A05]">
+                                        ₹{parseFloat(selectedVariant.effective_price).toLocaleString('en-IN')}
+                                      </p>
+                                    </div>
+                                    <div className="text-right">
+                                      <p className="text-xs text-gray-500">Selected:</p>
+                                      <p className="text-sm font-semibold text-gray-700">
+                                        {selectedVariant.ram}/{selectedVariant.storage}
+                                      </p>
+                                    </div>
                                   </div>
-                                  <div className="text-right">
-                                    <p className="text-xs text-gray-500">Selected:</p>
-                                    <p className="text-sm font-semibold text-gray-700">
-                                      {selectedVariant.ram}/{selectedVariant.storage}
-                                    </p>
-                                  </div>
-                                </div>
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
-                        </div>
-                      ) : 
-                      
-                      /* CASE 3: NO VARIANTS BUT HAS BASE PRICE (SHOW MANUAL SELECTION) */
-                      (modelDetails.base_price && parseFloat(modelDetails.base_price) > 0) ? (
-                        <div className="space-y-6">
-                           <div className="mb-4">
-                            <h3 className="text-lg md:text-xl font-bold text-gray-600 mb-1">Device Details</h3>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
                           </div>
-                          {renderVariantOptions('Storage', 'storage', modelDetails.storage_options)}
-                          {renderVariantOptions('RAM', 'ram', modelDetails.ram_options)}
-                          
-                          {(conditionResponses['storage'] || conditionResponses['ram']) && (
-                            <motion.div
-                              initial={{ opacity: 0, height: 0 }}
-                              animate={{ opacity: 1, height: 'auto' }}
-                              className="bg-gradient-to-r from-gray-50 to-gray-100 p-4 rounded-lg border-2 border-gray-200"
-                            >
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <p className="text-sm text-gray-600 mb-1">Base Price</p>
-                                  <p className="text-2xl md:text-3xl font-bold text-[#1B8A05]">
-                                    ₹{parseFloat(modelDetails.base_price).toLocaleString('en-IN')}
-                                  </p>
-                                </div>
-                                <div className="text-right">
-                                  <p className="text-xs text-gray-500">Selected:</p>
-                                  <p className="text-sm font-semibold text-gray-700">
-                                    {conditionResponses['ram'] || '-'}/{conditionResponses['storage'] || '-'}
-                                  </p>
-                                </div>
+                        ) :
+
+                          /* CASE 3: NO VARIANTS BUT HAS BASE PRICE (SHOW MANUAL SELECTION) */
+                          (modelDetails.base_price && parseFloat(modelDetails.base_price) > 0) ? (
+                            <div className="space-y-6">
+                              <div className="mb-4">
+                                <h3 className="text-lg md:text-xl font-bold text-gray-600 mb-1">Device Details</h3>
                               </div>
-                            </motion.div>
-                          )}
-                        </div>
-                      ) : 
-                      
-                      /* CASE 4: NO VARIANTS & NO BASE PRICE (SHOW ERROR) */
-                      (
-                        <div className="flex flex-col items-center justify-center py-12 px-4 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
-                          <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mb-4">
-                            <Ban size={32} className="text-gray-500" />
-                          </div>
-                          <h3 className="text-xl font-bold text-gray-700 mb-2">Available Soon</h3>
-                          <p className="text-center text-gray-500 max-w-xs">
-                            This device will be available soon for sale. Please check back later.
-                          </p>
-                        </div>
-                      )}
+                              {renderVariantOptions('Storage', 'storage', modelDetails.storage_options)}
+                              {renderVariantOptions('RAM', 'ram', modelDetails.ram_options)}
+
+                              {(conditionResponses['storage'] || conditionResponses['ram']) && (
+                                <motion.div
+                                  initial={{ opacity: 0, height: 0 }}
+                                  animate={{ opacity: 1, height: 'auto' }}
+                                  className="bg-gradient-to-r from-gray-50 to-gray-100 p-4 rounded-lg border-2 border-gray-200"
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <p className="text-sm text-gray-600 mb-1">Base Price</p>
+                                      <p className="text-2xl md:text-3xl font-bold text-[#1B8A05]">
+                                        ₹{parseFloat(modelDetails.base_price).toLocaleString('en-IN')}
+                                      </p>
+                                    </div>
+                                    <div className="text-right">
+                                      <p className="text-xs text-gray-500">Selected:</p>
+                                      <p className="text-sm font-semibold text-gray-700">
+                                        {conditionResponses['ram'] || '-'}/{conditionResponses['storage'] || '-'}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </motion.div>
+                              )}
+                            </div>
+                          ) :
+
+                            /* CASE 4: NO VARIANTS & NO BASE PRICE (SHOW ERROR) */
+                            (
+                              <div className="flex flex-col items-center justify-center py-12 px-4 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
+                                <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mb-4">
+                                  <Ban size={32} className="text-gray-500" />
+                                </div>
+                                <h3 className="text-xl font-bold text-gray-700 mb-2">Available Soon</h3>
+                                <p className="text-center text-gray-500 max-w-xs">
+                                  This device will be available soon for sale. Please check back later.
+                                </p>
+                              </div>
+                            )}
 
                     </div>
                   </div>
@@ -1005,18 +1076,18 @@ const DeviceStepper: React.FC = () => {
 
               {/* Step 2: Device Condition (PAGINATED BY GROUP) */}
               {step === 2 && (
-                <motion.div 
-                  key="step2" 
-                  initial={{ opacity: 0 }} 
-                  animate={{ opacity: 1 }} 
-                  exit={{ opacity: 0 }} 
+                <motion.div
+                  key="step2"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
                   className="space-y-4 md:space-y-8"
                 >
                   <div className="text-center">
                     <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-[#1C1C1B] mb-1 md:mb-2">Tell us its condition</h2>
                     <p className="text-sm sm:text-base md:text-lg text-gray-600">{modelDetails?.name}</p>
                   </div>
-                  
+
                   <AnimatePresence mode="wait">
                     <motion.div
                       key={activeGroupIndex}
@@ -1063,23 +1134,23 @@ const DeviceStepper: React.FC = () => {
               {step === 4 && (
                 <motion.div key="step4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4 md:space-y-8">
                   <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-[#1C1C1B] text-center">Schedule Pickup</h2>
-                  
+
                   {/* ADDRESS SECTION */}
                   <div>
                     <label className="block font-semibold text-base md:text-lg text-[#1C1C1B] mb-2 md:mb-3 flex items-center gap-2">
                       <MapPin size={18} className="text-[#1B8A05] md:w-5 md:h-5" /> Pickup Address *
                     </label>
-                    
+
                     {addresses.length === 0 && !showAddressForm ? (
                       <div className="text-center py-6 md:py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
                         <MapPin size={40} className="mx-auto mb-3 md:mb-4 text-gray-400 md:w-12 md:h-12" />
                         <p className="text-gray-600 mb-3 md:mb-4 text-sm md:text-base">No addresses found</p>
-                        <button 
+                        <button
                           type="button"
                           onClick={() => {
                             resetAddressForm();
                             setShowAddressForm(true);
-                          }} 
+                          }}
                           className="inline-flex items-center gap-2 px-4 md:px-6 py-2.5 md:py-3 bg-gradient-to-r from-[#FEC925] to-[#1B8A05] text-[#1C1C1B] rounded-lg md:rounded-xl font-bold hover:shadow-lg transition text-sm md:text-base"
                         >
                           <Plus size={18} className="md:w-5 md:h-5" />
@@ -1099,21 +1170,20 @@ const DeviceStepper: React.FC = () => {
                           <Plus size={18} className="text-[#FEC925] md:w-5 md:h-5" />
                           Add New Address
                         </button>
-                        
+
                         <div className="space-y-2 md:space-y-3 max-h-56 md:max-h-64 overflow-y-auto pr-2">
                           {addresses.map((addr) => (
-                            <button 
+                            <button
                               key={addr.id}
                               type="button"
-                              onClick={() => setSelectedAddressId(addr.id)} 
-                              className={`w-full p-3 md:p-4 border-2 rounded-lg md:rounded-xl text-left transition-all ${
-                                selectedAddressId === addr.id 
-                                  ? 'bg-[#FEC925]/20 border-[#FEC925] ring-2 ring-[#FEC925]/50' 
-                                  : 'border-gray-300 hover:border-[#FEC925]'
-                              }`}
+                              onClick={() => setSelectedAddressId(addr.id)}
+                              className={`w-full p-3 md:p-4 border-2 rounded-lg md:rounded-xl text-left transition-all ${selectedAddressId === addr.id
+                                ? 'bg-[#FEC925]/20 border-[#FEC925] ring-2 ring-[#FEC925]/50'
+                                : 'border-gray-300 hover:border-[#FEC925]'
+                                }`}
                             >
                               <p className="font-bold text-[#1C1C1B] text-sm md:text-base">
-                                {addr.type} 
+                                {addr.type}
                                 {addr.is_default && (
                                   <span className="text-[10px] md:text-xs font-medium bg-[#1B8A05] text-white px-1.5 md:px-2 py-0.5 rounded-full ml-2">
                                     Default
@@ -1127,7 +1197,7 @@ const DeviceStepper: React.FC = () => {
                         </div>
                       </>
                     ) : null}
-                    
+
                     {/* Address Form */}
                     {showAddressForm && (
                       <motion.div
@@ -1149,7 +1219,7 @@ const DeviceStepper: React.FC = () => {
                             <X size={20} className="md:w-6 md:h-6" />
                           </button>
                         </div>
-                        
+
                         <form onSubmit={handleCreateAddress} className="space-y-3 md:space-y-4">
                           <div>
                             <label className="block font-semibold text-xs md:text-sm text-[#1C1C1B] mb-1.5 md:mb-2">
@@ -1160,117 +1230,116 @@ const DeviceStepper: React.FC = () => {
                                 <button
                                   key={type}
                                   type="button"
-                                  onClick={() => setAddressFormData({...addressFormData, type: type as 'home' | 'office' | 'other'})}
-                                  className={`p-2.5 md:p-3 border-2 rounded-lg text-center font-medium transition-all capitalize text-sm md:text-base ${
-                                    addressFormData.type === type
-                                      ? 'bg-[#FEC925]/20 border-[#FEC925] ring-2 ring-[#FEC925]/50'
-                                      : 'border-gray-300 hover:border-[#FEC925]'
-                                  }`}
+                                  onClick={() => setAddressFormData({ ...addressFormData, type: type as 'home' | 'office' | 'other' })}
+                                  className={`p-2.5 md:p-3 border-2 rounded-lg text-center font-medium transition-all capitalize text-sm md:text-base ${addressFormData.type === type
+                                    ? 'bg-[#FEC925]/20 border-[#FEC925] ring-2 ring-[#FEC925]/50'
+                                    : 'border-gray-300 hover:border-[#FEC925]'
+                                    }`}
                                 >
                                   {type}
                                 </button>
                               ))}
                             </div>
                           </div>
-                          
+
                           <div>
                             <label className="block font-semibold text-xs md:text-sm text-[#1C1C1B] mb-1.5 md:mb-2">
                               Address Line 1 *
                             </label>
-                            <input 
-                              type="text" 
-                              placeholder="House/Flat No., Building Name" 
-                              value={addressFormData.line1} 
-                              onChange={(e) => setAddressFormData({...addressFormData, line1: e.target.value})} 
-                              className="w-full p-2.5 md:p-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:border-[#FEC925] focus:ring-4 focus:ring-[#FEC925]/30 focus:outline-none transition text-sm md:text-base" 
-                              required 
+                            <input
+                              type="text"
+                              placeholder="House/Flat No., Building Name"
+                              value={addressFormData.line1}
+                              onChange={(e) => setAddressFormData({ ...addressFormData, line1: e.target.value })}
+                              className="w-full p-2.5 md:p-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:border-[#FEC925] focus:ring-4 focus:ring-[#FEC925]/30 focus:outline-none transition text-sm md:text-base"
+                              required
                             />
                           </div>
-                          
+
                           <div>
                             <label className="block font-semibold text-xs md:text-sm text-[#1C1C1B] mb-1.5 md:mb-2">
                               Address Line 2 (Optional)
                             </label>
-                            <input 
-                              type="text" 
-                              placeholder="Street, Area, Locality" 
-                              value={addressFormData.line2} 
-                              onChange={(e) => setAddressFormData({...addressFormData, line2: e.target.value})} 
-                              className="w-full p-2.5 md:p-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:border-[#FEC925] focus:ring-4 focus:ring-[#FEC925]/30 focus:outline-none transition text-sm md:text-base" 
+                            <input
+                              type="text"
+                              placeholder="Street, Area, Locality"
+                              value={addressFormData.line2}
+                              onChange={(e) => setAddressFormData({ ...addressFormData, line2: e.target.value })}
+                              className="w-full p-2.5 md:p-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:border-[#FEC925] focus:ring-4 focus:ring-[#FEC925]/30 focus:outline-none transition text-sm md:text-base"
                             />
                           </div>
-                          
+
                           <div className="grid grid-cols-2 gap-3 md:gap-4">
                             <div>
                               <label className="block font-semibold text-xs md:text-sm text-[#1C1C1B] mb-1.5 md:mb-2">
                                 City *
                               </label>
-                              <input 
-                                type="text" 
-                                placeholder="City" 
-                                value={addressFormData.city} 
-                                onChange={(e) => setAddressFormData({...addressFormData, city: e.target.value})} 
-                                className="w-full p-2.5 md:p-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:border-[#FEC925] focus:ring-4 focus:ring-[#FEC925]/30 focus:outline-none transition text-sm md:text-base" 
-                                required 
+                              <input
+                                type="text"
+                                placeholder="City"
+                                value={addressFormData.city}
+                                onChange={(e) => setAddressFormData({ ...addressFormData, city: e.target.value })}
+                                className="w-full p-2.5 md:p-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:border-[#FEC925] focus:ring-4 focus:ring-[#FEC925]/30 focus:outline-none transition text-sm md:text-base"
+                                required
                               />
                             </div>
                             <div>
                               <label className="block font-semibold text-xs md:text-sm text-[#1C1C1B] mb-1.5 md:mb-2">
                                 State *
                               </label>
-                              <input 
-                                type="text" 
-                                placeholder="State" 
-                                value={addressFormData.state} 
-                                onChange={(e) => setAddressFormData({...addressFormData, state: e.target.value})} 
-                                className="w-full p-2.5 md:p-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:border-[#FEC925] focus:ring-4 focus:ring-[#FEC925]/30 focus:outline-none transition text-sm md:text-base" 
-                                required 
+                              <input
+                                type="text"
+                                placeholder="State"
+                                value={addressFormData.state}
+                                onChange={(e) => setAddressFormData({ ...addressFormData, state: e.target.value })}
+                                className="w-full p-2.5 md:p-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:border-[#FEC925] focus:ring-4 focus:ring-[#FEC925]/30 focus:outline-none transition text-sm md:text-base"
+                                required
                               />
                             </div>
                           </div>
-                          
+
                           <div>
                             <label className="block font-semibold text-xs md:text-sm text-[#1C1C1B] mb-1.5 md:mb-2">
                               Pincode *
                             </label>
-                            <input 
-                              type="text" 
-                              placeholder="6-digit pincode" 
-                              value={addressFormData.postal_code} 
-                              onChange={(e) => setAddressFormData({...addressFormData, postal_code: e.target.value.replace(/\D/g, '').slice(0, 6)})} 
-                              className="w-full p-2.5 md:p-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:border-[#FEC925] focus:ring-4 focus:ring-[#FEC925]/30 focus:outline-none transition text-sm md:text-base" 
+                            <input
+                              type="text"
+                              placeholder="6-digit pincode"
+                              value={addressFormData.postal_code}
+                              onChange={(e) => setAddressFormData({ ...addressFormData, postal_code: e.target.value.replace(/\D/g, '').slice(0, 6) })}
+                              className="w-full p-2.5 md:p-3 border-2 border-gray-300 rounded-lg md:rounded-xl focus:border-[#FEC925] focus:ring-4 focus:ring-[#FEC925]/30 focus:outline-none transition text-sm md:text-base"
                               maxLength={6}
-                              required 
+                              required
                             />
                           </div>
-                          
+
                           <div className="flex items-center gap-2 md:gap-3">
-                            <input 
-                              type="checkbox" 
+                            <input
+                              type="checkbox"
                               id="is_default"
                               checked={addressFormData.is_default}
-                              onChange={(e) => setAddressFormData({...addressFormData, is_default: e.target.checked})}
+                              onChange={(e) => setAddressFormData({ ...addressFormData, is_default: e.target.checked })}
                               className="w-4 h-4 md:w-5 md:h-5 rounded border-2 border-gray-300 text-[#FEC925] focus:ring-[#FEC925]"
                             />
                             <label htmlFor="is_default" className="font-medium text-[#1C1C1B] cursor-pointer text-xs md:text-sm">
                               Set as default address
                             </label>
                           </div>
-                          
+
                           <div className="flex gap-2 md:gap-3 pt-2">
-                            <button 
-                              type="button" 
+                            <button
+                              type="button"
                               onClick={() => {
                                 setShowAddressForm(false);
                                 resetAddressForm();
-                              }} 
+                              }}
                               className="flex-1 py-2.5 md:py-3 border-2 border-gray-300 rounded-lg md:rounded-xl font-semibold text-[#1C1C1B] hover:bg-gray-50 transition text-sm md:text-base"
                             >
                               Cancel
                             </button>
-                            <button 
-                              type="submit" 
-                              disabled={loading} 
+                            <button
+                              type="submit"
+                              disabled={loading}
                               className="flex-1 py-2.5 md:py-3 bg-gradient-to-r from-[#FEC925] to-[#1B8A05] text-[#1C1C1B] rounded-lg md:rounded-xl font-bold hover:shadow-lg disabled:opacity-50 transition text-sm md:text-base"
                             >
                               {loading ? 'Saving...' : 'Save Address'}
@@ -1280,11 +1349,11 @@ const DeviceStepper: React.FC = () => {
                       </motion.div>
                     )}
                   </div>
-                  
+
                   {/* DATE SELECTION */}
                   <div>
                     <label className="block font-semibold text-base md:text-lg text-[#1C1C1B] mb-3 md:mb-4 flex items-center gap-2">
-                      <Calendar size={18} className="text-[#1B8A05] md:w-5 md:h-5" /> 
+                      <Calendar size={18} className="text-[#1B8A05] md:w-5 md:h-5" />
                       Preferred Pickup Date *
                     </label>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 md:gap-3">
@@ -1293,16 +1362,14 @@ const DeviceStepper: React.FC = () => {
                           key={date.value}
                           type="button"
                           onClick={() => setPreferredDate(date.value)}
-                          className={`group relative p-3 md:p-4 border-2 rounded-lg md:rounded-xl text-center transition-all overflow-hidden ${
-                            preferredDate === date.value
-                              ? 'bg-[#FEC925] border-[#FEC925] ring-4 ring-[#FEC925]/30 text-[#1C1C1B] shadow-lg scale-105'
-                              : 'bg-white border-gray-300 hover:border-[#FEC925] hover:shadow-md text-gray-700 hover:scale-102'
-                          }`}
+                          className={`group relative p-3 md:p-4 border-2 rounded-lg md:rounded-xl text-center transition-all overflow-hidden ${preferredDate === date.value
+                            ? 'bg-[#FEC925] border-[#FEC925] ring-4 ring-[#FEC925]/30 text-[#1C1C1B] shadow-lg scale-105'
+                            : 'bg-white border-gray-300 hover:border-[#FEC925] hover:shadow-md text-gray-700 hover:scale-102'
+                            }`}
                         >
-                          <div className={`absolute inset-0 bg-gradient-to-br from-[#FEC925]/10 to-[#1B8A05]/10 opacity-0 group-hover:opacity-100 transition-opacity ${
-                            preferredDate === date.value ? 'opacity-100' : ''
-                          }`}></div>
-                          
+                          <div className={`absolute inset-0 bg-gradient-to-br from-[#FEC925]/10 to-[#1B8A05]/10 opacity-0 group-hover:opacity-100 transition-opacity ${preferredDate === date.value ? 'opacity-100' : ''
+                            }`}></div>
+
                           <div className="relative z-10">
                             <p className="text-xs md:text-sm font-bold uppercase tracking-wide mb-1 opacity-70">
                               {date.label}
@@ -1317,7 +1384,7 @@ const DeviceStepper: React.FC = () => {
                               {date.dayName}
                             </p>
                           </div>
-                          
+
                           {preferredDate === date.value && (
                             <motion.div
                               initial={{ scale: 0 }}
@@ -1331,11 +1398,11 @@ const DeviceStepper: React.FC = () => {
                       ))}
                     </div>
                   </div>
-                  
+
                   {/* TIME SLOT SELECTION */}
                   <div>
                     <label className="block font-semibold text-base md:text-lg text-[#1C1C1B] mb-3 md:mb-4 flex items-center gap-2">
-                      <Clock size={18} className="text-[#1B8A05] md:w-5 md:h-5" /> 
+                      <Clock size={18} className="text-[#1B8A05] md:w-5 md:h-5" />
                       Preferred Time Slot *
                     </label>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 md:gap-3">
@@ -1344,22 +1411,20 @@ const DeviceStepper: React.FC = () => {
                           key={slot.value}
                           type="button"
                           onClick={() => setTimeSlot(slot.value)}
-                          className={`group relative p-4 md:p-5 border-2 rounded-lg md:rounded-xl text-center transition-all overflow-hidden ${
-                            timeSlot === slot.value
-                              ? 'bg-[#FEC925] border-[#FEC925] ring-4 ring-[#FEC925]/30 text-[#1C1C1B] shadow-lg scale-105'
-                              : 'bg-white border-gray-300 hover:border-[#FEC925] hover:shadow-md text-gray-700 hover:scale-102'
-                          }`}
+                          className={`group relative p-4 md:p-5 border-2 rounded-lg md:rounded-xl text-center transition-all overflow-hidden ${timeSlot === slot.value
+                            ? 'bg-[#FEC925] border-[#FEC925] ring-4 ring-[#FEC925]/30 text-[#1C1C1B] shadow-lg scale-105'
+                            : 'bg-white border-gray-300 hover:border-[#FEC925] hover:shadow-md text-gray-700 hover:scale-102'
+                            }`}
                         >
-                          <div className={`absolute inset-0 bg-gradient-to-br from-[#FEC925]/10 to-[#1B8A05]/10 opacity-0 group-hover:opacity-100 transition-opacity ${
-                            timeSlot === slot.value ? 'opacity-100' : ''
-                          }`}></div>
-                          
+                          <div className={`absolute inset-0 bg-gradient-to-br from-[#FEC925]/10 to-[#1B8A05]/10 opacity-0 group-hover:opacity-100 transition-opacity ${timeSlot === slot.value ? 'opacity-100' : ''
+                            }`}></div>
+
                           <div className="relative z-10">
                             <p className="text-sm md:text-base lg:text-lg font-bold">
                               {slot.label}
                             </p>
                           </div>
-                          
+
                           {timeSlot === slot.value && (
                             <motion.div
                               initial={{ scale: 0 }}
@@ -1373,18 +1438,18 @@ const DeviceStepper: React.FC = () => {
                       ))}
                     </div>
                   </div>
-                  
+
                   {/* Special Instructions */}
                   <div>
                     <label className="block font-semibold text-base md:text-lg text-[#1C1C1B] mb-2 md:mb-3">
                       Special Instructions (Optional)
                     </label>
-                    <textarea 
-                      value={specialInstructions} 
-                      onChange={(e) => setSpecialInstructions(e.target.value)} 
-                      placeholder="e.g., Call on arrival, Building gate code, etc." 
-                      rows={3} 
-                      className="w-full p-3 md:p-4 border-2 border-gray-300 rounded-lg md:rounded-xl focus:border-[#FEC925] focus:ring-4 focus:ring-[#FEC925]/30 focus:outline-none font-medium transition resize-none text-sm md:text-base" 
+                    <textarea
+                      value={specialInstructions}
+                      onChange={(e) => setSpecialInstructions(e.target.value)}
+                      placeholder="e.g., Call on arrival, Building gate code, etc."
+                      rows={3}
+                      className="w-full p-3 md:p-4 border-2 border-gray-300 rounded-lg md:rounded-xl focus:border-[#FEC925] focus:ring-4 focus:ring-[#FEC925]/30 focus:outline-none font-medium transition resize-none text-sm md:text-base"
                     />
                   </div>
                 </motion.div>
@@ -1396,9 +1461,9 @@ const DeviceStepper: React.FC = () => {
             {isSellable() && (
               <div className="flex gap-2 md:gap-4 mt-4 md:mt-8">
                 {step > 1 && (
-                  <button 
-                    onClick={handleBack} 
-                    disabled={loading} 
+                  <button
+                    onClick={handleBack}
+                    disabled={loading}
                     className="flex items-center gap-1.5 md:gap-2 px-4 md:px-6 py-3 md:py-4 border-2 border-gray-300 rounded-lg md:rounded-xl hover:bg-gray-100 font-bold text-sm md:text-lg text-[#1C1C1B] transition disabled:opacity-50"
                   >
                     <ArrowLeft size={18} className="md:w-5 md:h-5" />
@@ -1412,7 +1477,7 @@ const DeviceStepper: React.FC = () => {
                 >
                   {loading ? (
                     <>
-                      <Loader2  size={20} className="animate-spin md:w-6 md:h-6" /> Processing...
+                      <Loader2 size={20} className="animate-spin md:w-6 md:h-6" /> Processing...
                     </>
                   ) : step === 1 ? (
                     <>Next: Condition <ArrowRight size={18} className="md:w-5 md:h-5" /></>
