@@ -525,7 +525,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { AlertCircle, ArrowUpRight, Check, CheckCircle, ChevronRight, Clock, Copy, RefreshCw, XCircle } from 'lucide-react';
 import { Card, AmountDisplay, StatusBadge, LoadingSpinner, EmptyState, Button } from './index';
 import { SandboxPayoutNote } from '../../components/sandbox/SandboxTools';
-import type { BankAccount, Payout, PayoutEstimateResponse, PayoutStatus } from './finance.types';
+import type { BankAccount, Payout, PayoutEstimateResponse } from './finance.types';
 
 interface WithdrawalFormProps {
   bankAccounts:     BankAccount[];
